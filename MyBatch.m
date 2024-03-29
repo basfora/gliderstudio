@@ -1,5 +1,16 @@
-classdef DataBatch
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Motion Studio 
+% MAE5070 - FLIGHT Dynamics
+% DataBtach class 
+% Beatriz Asfora
+% Mar 2024
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
+classdef MyBatch
+    % parse tracking data that was saved in the structure: 
+    % datafolder/sessionfolder/csv files
+    % return file path (relative to current folder) and file name
     properties
         % location of csv file, data folder
         datafolder string

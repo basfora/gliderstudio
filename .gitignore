@@ -1,0 +1,15 @@
+# ignore ALL .log files
+*.log
+*.asv
+
+# ignore ALL files in ANY directory named temp
+temp/
+
+# initial folders with not great data
+0308/
+0311/
+0313/
+0325/
+ 
+# my checking folder
+check/
