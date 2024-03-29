@@ -42,7 +42,7 @@ classdef MyTake
         pervalid
 
         % to plot
-        plotfolder string
+        plotfolder = "plots/"
 
 
     end
@@ -80,7 +80,7 @@ classdef MyTake
          
         end
 
-        function plotData(obj, plotfolder)
+        function plotData(obj, plotsubfolder)
         % plot data for analysis in global coordinates
         % scatter plot (no interpolation between missing data)
         
@@ -88,6 +88,8 @@ classdef MyTake
         rotxG = obj.rotationdata(:, 1); rotyG = obj.rotationdata(:, 2); rotzG = obj.rotationdata(:, 3);
         t = obj.time;
         
+        % where it's gonna be saved
+        pfolder = strcat(obj.plotfolder, plotsubfolder);
         
         figure;
 
@@ -171,7 +173,7 @@ classdef MyTake
         subtitle(fg,mysubtitle, 'FontSize', 10, 'Interpreter', 'none')
         
         % save plot as png (todo: change to pdf and crop)
-        saveas(gcf,fullfile(plotfolder, obj.name), 'png')
+        saveas(gcf,fullfile(pfolder, obj.name), 'png')
         hold off
         close
 

@@ -15,11 +15,11 @@ warning('off','all')
 
 
 % folder where csv files are saved
-myfolder = "data60";
+sessionfolder = "data60";
 
 % create obj to use class methods
 mysession = MyBatch;
-mysession = mysession.newBatch("trackingData/", myfolder);
+mysession = mysession.newBatch("data/", sessionfolder);
 
 % trackingData/myfolder/"
 fpath = mysession.folderpath;
@@ -38,7 +38,7 @@ for k = 1:mysession.nFiles
     [time, position, rotation] = take.getData;
     
     % plot tracking data in global coordinates
-    plotfoldername = "takePlots";
+    plotfoldername = strcat("plots", "_", sessionfolder);
     take.plotData(plotfoldername);
 
 

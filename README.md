@@ -1,5 +1,26 @@
 # gliderstudio
 
+Download or clone this repository. It is easier to keep the current folder structure to avoid compiling errors.
+> Folder structure: gliderstudio > classes, plots, trackingData
+
+* `trackingData`: data collected in the Motion Studio and saved as csv files
+  * any subfolder created here is referred as `sessionfolder`
+  * data60 : datasets where body was visible for 60% or more frames 
+* `plots`: generated plots will be saved here
+  * any subfolder created here is referred as `plotfolder`
+  * plotsdata60 : plots from data60 datasets
+* `classes`: custom for importing and managing tracking data (see below)
+  * MyBatch : helps parsing through multiple files inside trackingData > `sessionfolder`
+  * MyTake : helps importing and plotting tracking data from single csv file
+  * MyGlider : helps modifying data for glider studio purposes
+
+
+> Options used for Motive's Export Data: 
+> * Enabled: Header info, Markers, Rigid Body Bones
+> * Units: milimeters (mm)
+> * Rotation: XYZ
+> * Global coordinates
+> * solver settings: default
 
 ## Classes
 
@@ -71,12 +92,12 @@ Plots:
     take.plotData(plotfoldername);
 ```
 * Figure
-* * title: name of rigid body
-* * subtitle: take name
+  * title: name of rigid body
+  * subtitle: take name
 * Save as
-* * .png file 
-* * in chosen `plotfoldername` (located inside parentfolder)
-* * file name: take name
+  * .png file 
+  * in chosen `plotfoldername` (located inside parentfolder)
+  * file name: take name
 
 ## Author
 Beatriz Asfora, PhD.
