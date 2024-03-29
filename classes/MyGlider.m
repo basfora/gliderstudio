@@ -63,7 +63,8 @@ classdef MyGlider
 
         % velocity
         velG
-        velR
+        vN
+        vmag
 
         % to plot
         plotfolder = "plots/"
@@ -89,6 +90,26 @@ classdef MyGlider
             % make data nicer
             obj = obj.moddata();
 
+            % draft of velocity (finite dif, check with diff or
+            % gradiente for discontinuities)
+            obj = obj.velDraft();
+        end
+
+        function obj = velDraft(obj)
+             % velocity draft
+            [vel_N, vel_mag] = obj.computeVel(obj.time, obj.posN);
+            obj.vN = vel_N;
+            obj.vmag = vel_mag;
+            
+            % figure;
+            % for i =1:3
+            %     subplot(1,4,i)
+            %     plot(obj.time(2:end), obj.vN(:, i))
+            %     hold on
+            % end
+            % 
+            % subplot(1, 4, 4)
+            % plot(obj.time(2:end), obj.vmag)
         end
 
         function obj = moddata(obj)
@@ -128,7 +149,7 @@ classdef MyGlider
             
             % ROTATE POSITION data, posN = DNR DRG posG
             obj.posN = obj.rotatebyD(obj.posT_G, obj.DNG);
-            
+                       
         end
 
 
@@ -137,7 +158,7 @@ classdef MyGlider
             
             % inputs (just changed to m)
             pos1 = obj.posG;
-            % position in R (origin shifted, Z_R = -Y_G, X_R = +- X_G)
+            % position in SN
             pos2 = obj.posN;
             % ----------------------
             
@@ -388,6 +409,22 @@ classdef MyGlider
     end
 
     methods(Static)
+
+        function [velvec, velmag] = computeVel(time, posarray)
+            
+            x = posarray(:, 1); y = posarray(:, 2); z = posarray(:, 3);
+
+            % finite diference 
+            velx = [(x(2:end) - x(1:end-1))./(time(2:end) - time(1:end-1))];
+            vely = [(y(2:end) - y(1:end-1))./(time(2:end) - time(1:end-1))]; 
+            velz = [(z(2:end) - z(1:end-1))./(time(2:end) - time(1:end-1))];
+
+            velvec = [velx, vely, velz];
+
+            velmag = sqrt( velx.^2 + vely.^2 + velz.^2 ); 
+
+        end
+
         
         function newpos = rotatebyD(pos, DCM)
             % TODO change this to matrix multiplication (tired now)
