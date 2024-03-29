@@ -4,6 +4,7 @@
 
 # ignore ALL files in ANY directory named temp
 temp/
+GliderStudioDataProcessing.m
 
 # initial folders with not great data
 0308/
@@ -13,3 +14,4 @@ temp/
  
 # my checking folder
 check/
+plots_check/

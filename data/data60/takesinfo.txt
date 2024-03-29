@@ -2,273 +2,273 @@ Processing data from folder... data60
 Datasets found... 39
 ----------------------------------------------
 Take: Q1-sitting_01
-Rigid body: gliderPink02
+Rigid body: gliderPink02[V3Glider]
 Frames
 ... collected: 460
 ... for analysis: 171
 ... valid %: 62
 ----------------------
 Take: Q1-standing_01
-Rigid body: gliderPink02
+Rigid body: gliderPink02[V3Glider]
 Frames
 ... collected: 601
 ... for analysis: 507
 ... valid %: 85
 ----------------------
 Take: Q1-standing_02
-Rigid body: gliderPink02
+Rigid body: gliderPink02[V3Glider]
 Frames
 ... collected: 311
 ... for analysis: 186
 ... valid %: 60
 ----------------------
 Take: Q2-sitting_01
-Rigid body: gliderPink02
+Rigid body: gliderPink02[V3Glider]
 Frames
 ... collected: 601
 ... for analysis: 549
 ... valid %: 92
 ----------------------
 Take: Q2-standing_01
-Rigid body: gliderPink02
+Rigid body: gliderPink02[V3Glider]
 Frames
 ... collected: 565
 ... for analysis: 281
 ... valid %: 100
 ----------------------
 Take: Q2-standing_02
-Rigid body: gliderPink02
+Rigid body: gliderPink02[V3Glider]
 Frames
 ... collected: 456
 ... for analysis: 307
 ... valid %: 100
 ----------------------
 Take: Q3-sitting_01
-Rigid body: gliderPink02
+Rigid body: gliderPink02[V3Glider]
 Frames
 ... collected: 601
 ... for analysis: 428
 ... valid %: 72
 ----------------------
 Take: Q3-sitting_03
-Rigid body: gliderPink02
+Rigid body: gliderPink02[V3Glider]
 Frames
 ... collected: 601
 ... for analysis: 489
 ... valid %: 82
 ----------------------
 Take: Q3-standing_01
-Rigid body: gliderPink02
+Rigid body: gliderPink02[V3Glider]
 Frames
 ... collected: 601
 ... for analysis: 601
 ... valid %: 100
 ----------------------
 Take: Q3-standing_02
-Rigid body: gliderPink02
+Rigid body: gliderPink02[V3Glider]
 Frames
 ... collected: 601
 ... for analysis: 208
 ... valid %: 97
 ----------------------
 Take: Q3-standing_03
-Rigid body: gliderPink02
+Rigid body: gliderPink02[V3Glider]
 Frames
 ... collected: 523
 ... for analysis: 230
 ... valid %: 84
 ----------------------
 Take: Q4-sitting_01
-Rigid body: gliderPink02
+Rigid body: gliderPink02[V3Glider]
 Frames
 ... collected: 517
 ... for analysis: 514
 ... valid %: 100
 ----------------------
 Take: Q4-sitting_02
-Rigid body: gliderPink02
+Rigid body: gliderPink02[V3Glider]
 Frames
 ... collected: 526
 ... for analysis: 441
 ... valid %: 84
 ----------------------
 Take: Q4-standing_01
-Rigid body: gliderPink02
+Rigid body: gliderPink02[V3Glider]
 Frames
 ... collected: 714
 ... for analysis: 216
 ... valid %: 96
 ----------------------
 Take: Q4-standing_02
-Rigid body: gliderPink02
+Rigid body: gliderPink02[V3Glider]
 Frames
 ... collected: 502
 ... for analysis: 235
 ... valid %: 81
 ----------------------
 Take: Q4-standing_03
-Rigid body: gliderPink02
+Rigid body: gliderPink02[V3Glider]
 Frames
 ... collected: 649
 ... for analysis: 271
 ... valid %: 78
 ----------------------
 Take: Take 2024-03-08 04.57.35 PM
-Rigid body: gliderPink
+Rigid body: gliderPink[V3Glider]
 Frames
 ... collected: 1201
 ... for analysis: 696
 ... valid %: 64
 ----------------------
 Take: Take 2024-03-11 04.31.03 PM
-Rigid body: gliderPink
+Rigid body: gliderPink[V3Glider]
 Frames
 ... collected: 803
 ... for analysis: 795
 ... valid %: 100
 ----------------------
 Take: Take 2024-03-11 04.49.19 PM
-Rigid body: gliderPink01
+Rigid body: gliderPink01[V3Glider]
 Frames
 ... collected: 871
 ... for analysis: 868
 ... valid %: 100
 ----------------------
 Take: Take 2024-03-11 04.53.21 PM
-Rigid body: gliderPink01
+Rigid body: gliderPink01[V3Glider]
 Frames
 ... collected: 1201
 ... for analysis: 1179
 ... valid %: 99
 ----------------------
 Take: V1_0325_XaxisLessMass_008
-Rigid body: V1Glider
+Rigid body: V1Glider[V1Glider]
 Frames
 ... collected: 1185
 ... for analysis: 266
 ... valid %: 64
 ----------------------
 Take: V1_0325_XaxisLessMass_009
-Rigid body: V1Glider
+Rigid body: V1Glider[V1Glider]
 Frames
 ... collected: 1178
 ... for analysis: 462
 ... valid %: 100
 ----------------------
 Take: V1_0325_XaxisLessMass_010
-Rigid body: V1Glider
+Rigid body: V1Glider[V1Glider]
 Frames
 ... collected: 1201
 ... for analysis: 474
 ... valid %: 100
 ----------------------
 Take: V1_0325_Xaxis_001
-Rigid body: V1Glider
+Rigid body: V1Glider[V1Glider]
 Frames
 ... collected: 1016
 ... for analysis: 402
 ... valid %: 100
 ----------------------
 Take: V1_0325_Xaxis_002
-Rigid body: V1Glider
+Rigid body: V1Glider[V1Glider]
 Frames
 ... collected: 1201
 ... for analysis: 491
 ... valid %: 100
 ----------------------
 Take: V1_0325_Xaxis_003
-Rigid body: V1Glider
+Rigid body: V1Glider[V1Glider]
 Frames
 ... collected: 1201
 ... for analysis: 272
 ... valid %: 58
 ----------------------
 Take: V1_0325_Xaxis_004
-Rigid body: V1Glider
+Rigid body: V1Glider[V1Glider]
 Frames
 ... collected: 986
 ... for analysis: 297
 ... valid %: 64
 ----------------------
 Take: V1_0325_Xaxis_005
-Rigid body: V1Glider
+Rigid body: V1Glider[V1Glider]
 Frames
 ... collected: 1014
 ... for analysis: 354
 ... valid %: 100
 ----------------------
 Take: V1_0325_Xaxis_006
-Rigid body: V1Glider
+Rigid body: V1Glider[V1Glider]
 Frames
 ... collected: 1201
 ... for analysis: 386
 ... valid %: 82
 ----------------------
 Take: V1_0325_Xaxis_007
-Rigid body: V1Glider
+Rigid body: V1Glider[V1Glider]
 Frames
 ... collected: 1201
 ... for analysis: 479
 ... valid %: 72
 ----------------------
 Take: V1_0325_negXaxis
-Rigid body: V1Glider
+Rigid body: V1Glider[V1Glider]
 Frames
 ... collected: 798
 ... for analysis: 461
 ... valid %: 100
 ----------------------
 Take: V2_0325_Xaxis_001
-Rigid body: V2Glider
+Rigid body: V2Glider[V3Glider]
 Frames
 ... collected: 899
 ... for analysis: 343
 ... valid %: 65
 ----------------------
 Take: V2_0325_Xaxis_002
-Rigid body: V2Glider
+Rigid body: V2Glider[V3Glider]
 Frames
 ... collected: 1201
 ... for analysis: 743
 ... valid %: 89
 ----------------------
 Take: V2_0325_Xaxis_003
-Rigid body: V2Glider
+Rigid body: V2Glider[V3Glider]
 Frames
 ... collected: 1201
 ... for analysis: 315
 ... valid %: 63
 ----------------------
 Take: take01 - diagQI-standing
-Rigid body: gliderPink02
+Rigid body: gliderPink02[V3Glider]
 Frames
 ... collected: 796
 ... for analysis: 328
 ... valid %: 100
 ----------------------
 Take: take03 - standingup
-Rigid body: gliderPink01
+Rigid body: gliderPink01[V3Glider]
 Frames
 ... collected: 892
 ... for analysis: 323
 ... valid %: 91
 ----------------------
 Take: take04 - diagQIV-standing
-Rigid body: gliderPink01
+Rigid body: gliderPink01[V3Glider]
 Frames
 ... collected: 1201
 ... for analysis: 167
 ... valid %: 89
 ----------------------
 Take: take06 - diagQIII-sitting
-Rigid body: gliderPink02
+Rigid body: gliderPink02[V3Glider]
 Frames
 ... collected: 844
 ... for analysis: 275
 ... valid %: 99
 ----------------------
 Take: take06 - diagQIII-standing
-Rigid body: gliderPink02
+Rigid body: gliderPink02[V3Glider]
 Frames
 ... collected: 692
 ... for analysis: 254
