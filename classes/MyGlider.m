@@ -364,7 +364,7 @@ classdef MyGlider
             hold on
             grid on
             xlabel('Time [sec]')
-            ylabel('Position $X_N$ [deg]')
+            ylabel('Position $X_N$ [m]')
             hold off
 
             nexttile
@@ -372,7 +372,7 @@ classdef MyGlider
             hold on
             grid on
             xlabel('Time [sec]')
-            ylabel('Position $Y_N$ [deg]')
+            ylabel('Position $Y_N$ [m]')
             hold off
 
             nexttile
@@ -380,7 +380,7 @@ classdef MyGlider
             hold on
             grid on
             xlabel('Time [sec]')
-            ylabel('Position $Z_N$ [deg]')
+            ylabel('Position $Z_N$ [m]')
             hold off
 
             %% saving
