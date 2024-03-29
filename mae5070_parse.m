@@ -6,18 +6,18 @@
 % Mar 2024
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-clear
-clc
-close all
+% add this command so MATLAB can find the necessary functions
+addpath classes/
+% 
+clear, clc, close all
 set(0,'defaulttextinterpreter','latex')
 warning('off','all')
 
-% folder where csv files are saved
-myfolder = "okdata";
-% 0308, 0311, 0313, 0325, 
 
-% create obj to use data methods
+% folder where csv files are saved
+myfolder = "data60";
+
+% create obj to use class methods
 mysession = MyBatch;
 mysession = mysession.newBatch("trackingData/", myfolder);
 
@@ -27,7 +27,7 @@ fpath = mysession.folderpath;
 for k = 1:mysession.nFiles
     
     % name of the file within session folder
-    fname = mysession.array_filenames(k);
+    fname = mysession.getfname(k);
     
     % new take obj
     take = MyTake;
@@ -38,7 +38,8 @@ for k = 1:mysession.nFiles
     [time, position, rotation] = take.getData;
     
     % plot tracking data in global coordinates
-    take.plotData();
+    plotfoldername = "takePlots";
+    take.plotData(plotfoldername);
 
 
 end
