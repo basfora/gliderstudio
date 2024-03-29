@@ -100,7 +100,7 @@ classdef MyGlider
             [vel_N, vel_mag] = obj.computeVel(obj.time, obj.posN);
             obj.vN = vel_N;
             obj.vmag = vel_mag;
-            
+
             % figure;
             % for i =1:3
             %     subplot(1,4,i)
@@ -364,7 +364,7 @@ classdef MyGlider
             hold on
             grid on
             xlabel('Time [sec]')
-            ylabel('Rotation $X_N$ [deg]')
+            ylabel('Position $X_N$ [deg]')
             hold off
 
             nexttile
@@ -372,7 +372,7 @@ classdef MyGlider
             hold on
             grid on
             xlabel('Time [sec]')
-            ylabel('Rotation $Y_N$ [deg]')
+            ylabel('Position $Y_N$ [deg]')
             hold off
 
             nexttile
@@ -380,7 +380,7 @@ classdef MyGlider
             hold on
             grid on
             xlabel('Time [sec]')
-            ylabel('Rotation $Z_N$ [deg]')
+            ylabel('Position $Z_N$ [deg]')
             hold off
 
             %% saving
