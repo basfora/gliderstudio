@@ -17,6 +17,8 @@ warning('off','all')
 % change folder name here
 % folder where csv files are saved
 sessionfolder = "data60";
+% close figures after saving them; 1 to close, 0 to leave them open
+closeplot = 0;
 % ------------------------------------------
 
 % create obj to use class methods
@@ -42,7 +44,6 @@ for k = 1:session.nFiles
     % plot tracking data in global coordinates
     plotfoldername = strcat("plots", "_", sessionfolder);
     % plot
-    closeplot = 0;
     take.plotData(plotfoldername, closeplot);
     % -----------------
     
@@ -53,9 +54,23 @@ for k = 1:session.nFiles
     % input glidername and takename for easy access
     glider = glider.source(take.commoname, take.name);
     
-    %%  just to check
+    %  plots just to check
     glider.plotPos(plotfoldername, closeplot)
     glider.plotData(plotfoldername, closeplot)
+
+    %% Glider data 
+
+    % position in normal frame of reference (SN)
+    pos_N = glider.posN;
+
+    % velocity in SG through finite differences (bit ragged, needs smoothing)
+    % TODO try diff or gradient
+    vel_N = glider.vN;
+    vel_mag = glider.vmag;
+
+    % rotation in global frame of reference 
+    % TODO change to SN
+    rot_G = glider.rotG;
 
 end
 
