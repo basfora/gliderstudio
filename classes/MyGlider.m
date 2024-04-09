@@ -41,6 +41,11 @@ classdef MyGlider
         DOG % global to So
         posSO
         height
+        % rotation body wrt to SO
+        rotB_O
+
+        DBN % nominal to body
+        
 
         % to plot
         plotfolder = "plots/"
@@ -83,7 +88,7 @@ classdef MyGlider
             % do nothing with angles (it's already unwrapped)
             obj.rotG = obj.rotinput;
 
-            % ---------------------------------
+            % ------obj.rotB_O---------------------------
             % init conditions wrt SG
             % position
             obj.pos_originG = obj.posG(1, :);
@@ -92,12 +97,59 @@ classdef MyGlider
             % ---------------------------------
             
             %% frame change
-            % DO_G (global to So)
-            obj = GToSO(obj);
+            % position (global to So)
+            obj = posGToSO(obj);
+
+            % rotation
+            obj = angToSB(obj);
+
+        end
+        
+        function obj = angToSB(obj)
+            
+            % global to SO (90 deg on xG)
+            D0G = obj.DOG;
+            % transpose, SO to Global
+            DGO = transpose(D0G);
+
+            % nominal to body (90 deg on xN)
+            DBN = obj.getD1(90);
+            obj.DBN = DBN;
+
+            % measured angles (deg)
+            angG = obj.rotG;
+
+            n = size(angG, 1);
+            seq = 123;
+
+            obj.rotB_O = zeros(n, 3);
+
+            for k=1:n
+                
+                % current measured angles (from Motive)
+                phi = angG(k, 1);
+                theta = angG(k, 2);
+                psi = angG(k, 3);
+
+                % current rotation matrix
+                DNG_k = obj.getDmatrix([phi, theta, psi], seq);
+
+                % current DB/O
+                DBO = DBN * DNG_k * DGO;
+
+                % angles of interest (rotation of body wrt to SO)
+                eul_angles = rotm2eul(DBO, 'XYZ');
+
+                obj.rotB_O(k, :) = rad2deg(eul_angles);
+            end
+
+
+
 
         end
 
-        function obj = GToSO(obj)
+
+        function obj = posGToSO(obj)
 
             
             % height is the measurement in y direction
@@ -106,41 +158,132 @@ classdef MyGlider
             % rotate sequence
             seq = 123;
 
-            % rotate 90 degrees around xG (make z-down on So)
-            roll = 90;
-            % align xO with direction of movement (rotate the initial measured angle along yG )
-            pitch = obj.rotG(1, 2);
-            % don't rotate along zG
-            psi = 0;
-            % angle for rotation
-            ang = [roll, pitch, psi];
-            
-            % get rotation matrix from SG to SO
-            obj.DOG = obj.getDmatrix(ang, seq);
+            % SG to SO: +90 degrees around xG (make z-down)
+            obj.DOG = obj.getD1(90);
 
             % rotate position data from SG to SO
             pos_rotated = obj.rotatebyD(obj.posG, obj.DOG);   
 
             % TRANSLATE POSITION data from SG to SO 
-            % (displace by xG, zG to where the glider was first seen,
-            % xO(0), yO(0)
+            % (displace to where the glider was first seen, xO(0), yO(0) )
             shift = [pos_rotated(1, 1), pos_rotated(1, 2), 0];
             obj.posSO = obj.moveOrigin(pos_rotated, shift);
 
             %%
-            figure;
-            plot(obj.time, obj.posG(:, 2), 'r')
-            hold on
-            %plot(obj.time, obj.height, 'b--')
-            plot(obj.time, -obj.posSO(:, 3), 'k')
-            title('Height Check')
-            legend('Y-UP (raw)', '- $Z_O$', 'Interpreter', 'latex')
+            % figure;
+            % plot(obj.time, obj.posG(:, 2), 'r')
+            % hold on
+            % %plot(obj.time, obj.height, 'b--')
+            % plot(obj.time, -obj.posSO(:, 3), 'k')
+            % title('Height Check')
+            % legend('Y-UP (raw)', '- $Z_O$', 'Interpreter', 'latex')
 
 
         end
 
 
         %% plot functions
+
+        function plotStudio(obj, plotsubfolder, closeopt)
+            % PLOT in one figure
+            % (line 1) 3D position wrt to SO, Height instead of true Z
+            % (line 2) position vs time (also in S0)
+            % (line 3) angles taken from DB/O
+            
+            % time
+            t = obj.time;
+            
+            % position wrt SO
+            pos = obj.posSO;
+            x = pos(:, 1); y = pos(:, 2); z = obj.height;
+            
+            % rotation SB wrt SO
+            rot = obj.rotB_O;
+
+            % aestheticsuntitled3
+            mkrsize1 = 4; mkrsize2 = 3;
+
+            % figure
+            figure;
+            fg = tiledlayout(3, 3);
+            
+            % 3D POSITION in SO
+            nexttile([1 3]);
+            plot3(x, y, z, 'b.', 'MarkerSize', mkrsize1)
+            hold on
+            % initial collected point
+            plot3(x(1), y(1), z(1), 'r*', 'MarkerSize', mkrsize2)
+            % axis equal
+            set(gca, 'YDir', 'reverse')
+            % axis
+            xlabel('$X_{O}$ [m]')
+            ylabel('$Y_{O}$ [m]')
+            zlabel('Height [m]')
+            % legend
+            legend('data pts', 'first pt', 'Location', 'southeast', 'FontSize', 7)
+            legend('boxon')
+            grid on
+            grid minor
+            % [az, el] = view
+            view([20, 30])
+            
+            % POSITION vs TIME in SO
+            axisname = ["$X_O$", "$Y_O$", "$Z_O$"];
+            mycolor = ["r.", "m.", "g."];
+            for axx=1:3
+
+                nexttile
+                plot(t, pos(:, axx), mycolor(axx), 'MarkerSize', mkrsize1)
+                hold on
+                title('Position')
+                grid on
+                xlabel('Time [sec]')
+                yname =  axisname(axx) + " [m]";
+                ylabel(yname)
+                xlim([0 max(t)])
+                hold off
+            end
+
+            % ANGLE vs TIME wrt S0
+            anglename = ["$\phi$", "$\theta$", "$\psi$"];
+            mycolor = ["k.", "k.", "k."];        
+            for axx=1:3
+
+                nexttile
+                plot(t, rot(:, axx), mycolor(axx), 'MarkerSize', mkrsize1)
+                hold on
+                title('Rotation')
+                grid on
+                xlabel('Time [sec]')
+                yname =  anglename(axx) + " [deg]";
+                ylabel(yname)
+                xlim([0 max(t)])
+                hold off
+            end
+
+            %% saving
+            % where it's gonna be saved
+            pfolder = strcat(obj.plotfolder, plotsubfolder);
+            % change this for obj.gliderID and add b in the save file
+            mytitle = obj.gliderID;
+            mysubtitle = strcat(obj.takename);%, " [visible ", string(obj.pervalid), '%]');
+            mysavename = strcat(obj.takename, "main");
+
+            % figure title
+            title(fg, mytitle, 'FontSize', 12)
+            subtitle(fg,mysubtitle, 'FontSize', 8, 'Interpreter', 'none')
+
+            % save plot as png (todo: change to pdf and crop)
+            saveas(gcf,fullfile(pfolder, mysavename), 'png')
+            hold off
+
+            if closeopt ~= 0
+                close
+            end
+
+        end
+
+
         % TODO move this to function for all classes
         function plotPos(obj, plotsubfolder, closeopt)
 
@@ -170,7 +313,7 @@ classdef MyGlider
             % initial collected point
             plot3(x(1), y(1), z(1), 'r*', 'MarkerSize', mkrsize2)
             % axis equal
-            % set(gca, 'YDir', 'reverse')
+            set(gca, 'YDir', 'reverse')
             % axis
             xlabel('$X_{O}$ [m]')
             ylabel('$Y_{O}$ [m]')
@@ -180,6 +323,7 @@ classdef MyGlider
             legend('boxon')
             grid on
             grid minor
+            
 
             % plot wrt SR0
             for axx=1:3
@@ -227,9 +371,6 @@ classdef MyGlider
                 ylabel(yname)
                 hold off
             end
-
-            
-
 
             %% saving
             % where it's gonna be saved

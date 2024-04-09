@@ -15,3 +15,5 @@ GliderStudioDataProcessing.m
 # my checking folder
 check/
 plots_check/
+datadebug/
+plots_datadebug/

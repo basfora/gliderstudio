@@ -14,9 +14,8 @@ set(0,'defaulttextinterpreter','latex')
 warning('off','all')
 
 % ------------------------------------------
-% change folder name here
-% folder where csv files are saved
-sessionfolder = "datadebug";
+% save files inside mydata
+sessionfolder = "mydata";
 % close figures after saving them; 1 to close, 0 to leave them open
 closeplot = 0;
 % ------------------------------------------
@@ -44,7 +43,7 @@ for k = 1:session.nFiles
     % plot tracking data in global coordinates
     plotfoldername = strcat("plots", "_", sessionfolder);
     % plot
-    take.plotData(plotfoldername, closeplot);
+    % take.plotData(plotfoldername, closeplot);
     % -----------------
     
     % new glider obj
@@ -54,28 +53,24 @@ for k = 1:session.nFiles
     % input glidername and takename for easy access
     glider = glider.source(take.commoname, take.name);
     
-    %  plots just to check
-    % glider.plotPos(plotfoldername, closeplot)
+    %  plot
     glider.plotStudio(plotfoldername, closeplot)
 
     %% Glider data 
 
-    % position in normal frame of reference (SN)
-    positionSO = glider.posSO;
+    % position wrt SO
+    positionB_SO = glider.posSO;
 
+    % rotation body wrt SO
+    rotationB_SO = glider.rotB_O;
+
+    % height
+    height = glider.height;
+
+    % save
+    save(glider.takename, "height", "rotationB_SO", "positionB_SO")
 
 end
-
-
-
-
-
-
-
-
-
-
-
 
 
 
