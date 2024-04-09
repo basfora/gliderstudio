@@ -28,6 +28,7 @@ classdef MyTake
         alltimes
         allposes
         allmarkers
+        allangles
 
         % logical for which data to keep
         tokeep logical
@@ -78,10 +79,66 @@ classdef MyTake
             % import raw data
             obj.dataraw = obj.importTrackingData(obj.fullpath);
 
-            % run some checks
+            % run some checks, discard some frames
             obj = obj.checkData();
 
         end
+
+        function obj = checkData(obj)
+
+            datatake = obj.dataraw;
+            obj.n = size(datatake, 1);
+            disp("Frames")
+            disp(strcat("... collected: ", string(obj.n)))
+
+            % separate raw data
+            rw1 = 1; col1 = 3; col2 = 9;
+            % column 1: frame numbers
+            obj.allframes = datatake(rw1:end, 1);
+            % column 2: time stamp
+            obj.alltimes = datatake(rw1:end, 2);
+            % columns 3-6: XYZ rotation, XYZ position
+            obj.allposes = datatake(rw1:end,col1:col1+5);
+            % columns 7-end: rigid body markers
+            obj.allmarkers = datatake(rw1:end, col2:end);
+
+            %% what we consider valid
+
+            % not empty lines (NaN)
+            isNumerical = ~isnan(obj.allposes(:,1));
+
+            % not zero values (0, 0, 0, 0, 0, 0)
+            isNz = sum(obj.allposes, 2) ~=0;
+
+            % not all markers are occluded
+            isVis = ~all(isnan(obj.allmarkers), 2);
+
+            % 0 for drop, 1 to keep
+            rowstokeep = isNumerical & isNz & isVis;
+
+            % take invalid data out and save
+            obj.time = obj.alltimes(rowstokeep, :);
+            obj.frames = obj.allframes(rowstokeep, :);
+            obj.trackingdata = obj.allposes(rowstokeep, :);
+            
+            % angles (unwrap)
+            obj.rotationdata = obj.unwrapAngle(obj.trackingdata(:, 1:3));
+            % position
+            obj.positiondata = obj.trackingdata(:, 4:6);
+            obj.goodn = size(obj.trackingdata, 1);
+            obj.tokeep = rowstokeep;
+            % id when exp ended
+            endexp = obj.frames(end, 1) + 1;
+            obj.pervalid = ceil((obj.goodn / endexp) * 100);
+
+            % print data checks results
+            disp(strcat("... for analysis: ", string(obj.goodn)))
+            disp(strcat("... valid %: ", string(obj.pervalid)))
+            disp('----------------------')
+
+        end
+
+        %% PLOT and retreieve functions
 
         function [timearray, positionarray, rotationarray] = getData(obj)
             % return time, rotation (XYZ) and position (XYZ) in global
@@ -176,9 +233,9 @@ classdef MyTake
                 mytitle = obj.bodyname;
             end
             %
-    
+
             mysubtitle = [strcat(obj.name, ...
-                " [visible ", string(obj.pervalid), '%]', ' - trimmed raw data')];
+                " [visible ", string(obj.pervalid), '%]', ' - Raw Data, trimmed')];
 
             % figure title
             title(fg, mytitle, 'FontSize', 12)
@@ -196,60 +253,22 @@ classdef MyTake
 
         end
 
-        function obj = checkData(obj)
-
-            datatake = obj.dataraw;
-            obj.n = size(datatake, 1);
-            disp("Frames")
-            disp(strcat("... collected: ", string(obj.n)))
-
-            % separate raw data
-            rw1 = 1; col1 = 3; col2 = 9;
-            % column 1: frame numbers
-            obj.allframes = datatake(rw1:end, 1);
-            % column 2: time stamp
-            obj.alltimes = datatake(rw1:end, 2);
-            % columns 3-6: XYZ rotation, XYZ position
-            obj.allposes = datatake(rw1:end,col1:col1+5);
-            % columns 7-end: rigid body markers
-            obj.allmarkers = datatake(rw1:end, col2:end);
-
-            %% what we consider valid
-
-            % not empty lines (NaN)
-            isNumerical = ~isnan(obj.allposes(:,1));
-
-            % not zero values (0, 0, 0, 0, 0, 0)
-            isNz = sum(obj.allposes, 2) ~=0;
-
-            % not all markers are occluded
-            isVis = ~all(isnan(obj.allmarkers), 2);
-
-            % 0 for drop, 1 to keep
-            rowstokeep = isNumerical & isNz & isVis;
-
-            % take invalid data out and save
-            obj.time = obj.alltimes(rowstokeep, :);
-            obj.frames = obj.allframes(rowstokeep, :);
-            obj.trackingdata = obj.allposes(rowstokeep, :);
-            obj.rotationdata = obj.trackingdata(:, 1:3);
-            obj.positiondata = obj.trackingdata(:, 4:6);
-            obj.goodn = size(obj.trackingdata, 1);
-            obj.tokeep = rowstokeep;
-            % id when exp ended
-            endexp = obj.frames(end, 1) + 1;
-            obj.pervalid = ceil((obj.goodn / endexp) * 100);
-
-            % print data checks results
-            disp(strcat("... for analysis: ", string(obj.goodn)))
-            disp(strcat("... valid %: ", string(obj.pervalid)))
-            disp('----------------------')
-
-        end
-
     end
 
     methods(Static)
+
+        function ang = unwrapAngle(anglearray)
+            % unwrap angle from -180, 180 to -inf, inf to avoid
+            % discontinuities
+
+            % radians
+            ang_rad = deg2rad(anglearray);
+            % if there are jumps, replace by complement
+            ang_rad_unwr = unwrap(ang_rad);
+            % back to degrees
+            ang = rad2deg(ang_rad_unwr);
+
+        end
 
         function bodyname = headerRow(rel_path, k)
             % Read the header row
