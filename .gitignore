@@ -2,10 +2,8 @@
 *.log
 *.asv
 *.mat
-
-# ignore files inside these folders
-mydata/*.csv
-plots_mydata/*.png
+*.csv
+*.png
 
 # ignore ALL files in ANY directory named temp
 temp/
