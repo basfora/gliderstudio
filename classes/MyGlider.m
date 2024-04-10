@@ -268,6 +268,106 @@ classdef MyGlider
             end
 
         end
+        
+        function plotOriginal(obj, plotsubfolder, closeopt)
+            % PLOT in one figure
+            % (line 1) 3D position wrt to SO, Height instead of true Z
+            % (line 2) position vs time (also in S0)
+            % (line 3) angles taken from DB/O
+            
+            % time
+            t = obj.time;
+            
+            % position wrt SO
+            pos = obj.posN_G;
+            x = pos(:, 1); y = pos(:, 2); z = pos(:, 3);
+            
+            % rotation SB wrt SO
+            rot = obj.rotN_G;
+
+            % aestheticsuntitled3
+            mkrsize1 = 4; mkrsize2 = 3;
+
+            % figure
+            figure;
+            fg = tiledlayout(3, 3);
+            
+            % 3D POSITION in SO
+            nexttile([1 3]);
+            plot3(x, y, z, 'b.', 'MarkerSize', mkrsize1)
+            hold on
+            % initial collected point
+            plot3(x(1), y(1), z(1), 'r*', 'MarkerSize', mkrsize2)
+            % axis equal
+            % set(gca, 'YDir', 'reverse')
+            % Y-UP
+            camup([0 1 0])
+            % axis
+            xlabel('$X_{G}$ [m]')
+            ylabel('$Y_{G}$ [m]')
+            zlabel('$Z_{G}$ [m]')
+            % legend
+            legend('data pts', 'first pt', 'Location', 'southeast', 'FontSize', 7)
+            legend('boxon')
+            grid on
+            grid minor
+            % [az, el] = view
+            view([20, 30])
+            
+            % POSITION vs TIME in SO
+            axisname = ["$X_G$", "$Y_G$", "$Z_G$"];
+            mycolor = ["r.", "m.", "g."];
+            for axx=1:3
+
+                nexttile
+                plot(t, pos(:, axx), mycolor(axx), 'MarkerSize', mkrsize1)
+                hold on
+                title('Position')
+                grid on
+                xlabel('Time [sec]')
+                yname =  axisname(axx) + " [m]";
+                ylabel(yname)
+                xlim([0 max(t)])
+                hold off
+            end
+
+            % ANGLE vs TIME wrt S0
+            anglename = axisname;     
+            for axx=1:3
+
+                nexttile
+                plot(t, rot(:, axx), mycolor(axx), 'MarkerSize', mkrsize1)
+                hold on
+                title('Rotation')
+                grid on
+                xlabel('Time [sec]')
+                yname =  anglename(axx) + " [deg]";
+                ylabel(yname)
+                xlim([0 max(t)])
+                hold off
+            end
+
+            %% saving
+            % where it's gonna be saved
+            pfolder = strcat(obj.plotfolder, plotsubfolder);
+            % change this for obj.gliderID and add b in the save file
+            mytitle = obj.gliderID + " - " + "Global Data";
+            mysubtitle = strcat(obj.takename);%, " [visible ", string(obj.pervalid), '%]');
+            mysavename = strcat(obj.takename, "original");
+
+            % figure title
+            title(fg, mytitle, 'FontSize', 12, 'Interpreter', 'none')
+            subtitle(fg,mysubtitle, 'FontSize', 8, 'Interpreter', 'none')
+
+            % save plot as png (todo: change to pdf and crop)
+            saveas(gcf,fullfile(pfolder, mysavename), 'png')
+            hold off
+
+            if closeopt ~= 0
+                close
+            end
+
+        end
 
         % TODO move this to function for all classes
         function plotPos(obj, plotsubfolder, closeopt)
