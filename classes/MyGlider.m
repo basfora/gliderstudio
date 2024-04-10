@@ -26,28 +26,34 @@ classdef MyGlider
 
         % cartesian coordinate systems:
         % SG: global, Motion Studio during data collection (inertial)
-        posG
-        rotG
+        posN_G
+        rotN_G
+        height
 
         % origin data pt
-        pos_originG = [0, 0, 0];
-        rot_originG = [0, 0, 0];
-        
-        % origin shift to first data pt
-        pos_translatedG
+        posN_Gstart = zeros(1, 3);
+        rotN_Gstart = zeros(1, 3);
+        % shift SG origin to first data point
+        posN_Gtrans 
         
         % SO: (inertial) z-down, x+ direction of movement, origin at the
         % ground where glider was first seen
-        DOG % global to So
-        posSO
-        height
+        
+        posB_O        
         % rotation body wrt to SO
         rotB_O
-
-        DBN % nominal to body
         
+        % ROTATION MATRICES
+        % SG to SO (global to zero)
+        DO_G = zeros(3,3);
+        % SO to SG (zero to global) 
+        DG_O = zeros(3,3);
+        % SG to SN (global to nominal)
+        DN_G = zeros(3,3);
+        % SN to SB (nominal to body)
+        DB_N = zeros(3,3);        
 
-        % to plot
+        % to save plot
         plotfolder = "plots/"
 
     end% R1: Z-down, X+ torwards throw
@@ -75,115 +81,95 @@ classdef MyGlider
             % gradiente for discontinuities)
             % obj = obj.velDraft();
         end
-
+    
         function obj = modifydata(obj)
             %  make data user friendlier according to MAE5070 conventions
-
-            % move time to start at zero
+            
+            % ------------ save inputs using naming convention
+            % position: turn mm to m
+            obj.posN_G = obj.posinput/1000;
+            % height is the measurement in yG direction
+            obj.height = obj.posN_G(:, 2);
+            % rotation: save
+            obj.rotN_G = obj.rotinput;
+            % time: shift to start at zero
             obj.time = obj.moveOrigin(obj.timeinput);
+            % ------------
 
-            % turn from mm to m
-            obj.posG = obj.posinput/1000;
-
-            % do nothing with angles (it's already unwrapped)
-            obj.rotG = obj.rotinput;
-
-            % ------obj.rotB_O---------------------------
-            % init conditions wrt SG
-            % position
-            obj.pos_originG = obj.posG(1, :);
-            % rotation
-            obj.rot_originG = obj.rotG(1, :);
-            % ---------------------------------
+            % starting point: position and rotation of SN wrt to SG
+            obj.posN_Gstart = obj.posN_G(1, :);
+            obj.rotN_Gstart = obj.rotN_G(1, :);
             
-            %% frame change
-            % position (global to So)
-            obj = posGToSO(obj);
-
-            % rotation
-            obj = angToSB(obj);
-
-        end
-        
-        function obj = angToSB(obj)
+            % TRANSLATE SG to starting point: 
+            % [xG, yG, zG] = [xG-xGstart, yG, zG - zGstart]
+            deltaStartG = [obj.posN_Gstart(1), 0, obj.posN_Gstart(3)];
+            obj.posN_Gtrans = obj.moveOrigin(obj.posN_G, deltaStartG);
             
-            % global to SO (90 deg on xG)
-            D0G = obj.DOG;
-            % transpose, SO to Global
-            DGO = transpose(D0G);
+            % compute time invariant rotation matrices
+            obj = obj.computeKnownDs();
 
-            % nominal to body (90 deg on xN)
-            DBN = obj.getD1(90);
-            obj.DBN = DBN;
-
-            % measured angles (deg)
-            angG = obj.rotG;
-
-            n = size(angG, 1);
-            seq = 123;
-
-            obj.rotB_O = zeros(n, 3);
-
+            % set size up
+            n = size(obj.posN_G, 1);
+            aux_pos = zeros(n, 3);
+            aux_rot = zeros(n, 3);
+            
+            % LOOP through each measurement
             for k=1:n
                 
-                % current measured angles (from Motive)
-                phi = angG(k, 1);
-                theta = angG(k, 2);
-                psi = angG(k, 3);
+                % POSITION: from SG to SO at k
+                aux_pos(k, :) = obj.changeFrame(obj.posN_Gtrans(k, :), obj.DO_G);
 
-                % current rotation matrix
-                DNG_k = obj.getDmatrix([phi, theta, psi], seq);
+                % ANGLE: we want SB wrt S0 at k
+                aux_rot(k, :) = obj.computeEuler(k);
 
-                % current DB/O
-                DBO = DBN * DNG_k * DGO;
-
-                % angles of interest (rotation of body wrt to SO)
-                eul_angles = rotm2eul(DBO, 'XYZ');
-
-                obj.rotB_O(k, :) = rad2deg(eul_angles);
             end
 
+            % save position of glider wrt SO
+            obj.posB_O = aux_pos;
+
+            % save rotation of B wrt S0
+            obj.rotB_O = rad2deg(unwrap(aux_rot));
+
+        end
+
+        function eul_angles = computeEuler(obj, k)
+            % OUTPUT: new Euler Angles in radians
+
+            % just for visibility
+            DBN = obj.DB_N; DGO = obj.DG_O;
 
 
+            % current measured angles (from Motive software)
+                phi = obj.rotN_G(k, 1);
+                theta = obj.rotN_G(k, 3);
+                yaw = obj.rotN_G(k, 2);
+
+                % current rotation matrix (DCM)
+                xyz = [phi, theta, yaw]; seq = 123;
+                DNG_k = obj.getDmatrix(xyz, seq);
+
+                % compute DB/0 (rot SB from S0)
+                DBO_k = DBN * DNG_k * DGO;
+
+                % angles of interest (rotation of body wrt to SO)
+                eul_angles = rotm2eul(DBO_k, 'XYZ');
 
         end
 
 
-        function obj = posGToSO(obj)
+        function obj = computeKnownDs(obj)
 
-            
-            % height is the measurement in y direction
-            obj.height = obj.posG(:, 2);
-            
-            % rotate sequence
-            seq = 123;
-
-            % SG to SO: +90 degrees around xG (make z-down)
-            obj.DOG = obj.getD1(90);
-
-            % rotate position data from SG to SO
-            pos_rotated = obj.rotatebyD(obj.posG, obj.DOG);   
-
-            % TRANSLATE POSITION data from SG to SO 
-            % (displace to where the glider was first seen, xO(0), yO(0) )
-            shift = [pos_rotated(1, 1), pos_rotated(1, 2), 0];
-            obj.posSO = obj.moveOrigin(pos_rotated, shift);
-
-            %%
-            % figure;
-            % plot(obj.time, obj.posG(:, 2), 'r')
-            % hold on
-            % %plot(obj.time, obj.height, 'b--')
-            % plot(obj.time, -obj.posSO(:, 3), 'k')
-            % title('Height Check')
-            % legend('Y-UP (raw)', '- $Z_O$', 'Interpreter', 'latex')
-
+            % ROTATION MATRICES            
+            % SG to SO (global to zero) - rotate 90 deg on xG
+            obj.DO_G = obj.findDirection(obj.posN_G);
+            % SO to SG (zero to global) -- transpose of DO_G
+            obj.DG_O = transpose(obj.DO_G);
+            % SN to SB (nominal to body) - rotate 90 deg on xN
+            obj.DB_N = obj.getD1(90);
 
         end
 
-
-        %% plot functions
-
+        %% PLOT functions
         function plotStudio(obj, plotsubfolder, closeopt)
             % PLOT in one figure
             % (line 1) 3D position wrt to SO, Height instead of true Z
@@ -194,7 +180,7 @@ classdef MyGlider
             t = obj.time;
             
             % position wrt SO
-            pos = obj.posSO;
+            pos = obj.posB_O;
             x = pos(:, 1); y = pos(:, 2); z = obj.height;
             
             % rotation SB wrt SO
@@ -265,12 +251,12 @@ classdef MyGlider
             % where it's gonna be saved
             pfolder = strcat(obj.plotfolder, plotsubfolder);
             % change this for obj.gliderID and add b in the save file
-            mytitle = obj.gliderID;
+            mytitle = obj.gliderID + " - " + "Body Data";
             mysubtitle = strcat(obj.takename);%, " [visible ", string(obj.pervalid), '%]');
             mysavename = strcat(obj.takename, "main");
 
             % figure title
-            title(fg, mytitle, 'FontSize', 12)
+            title(fg, mytitle, 'FontSize', 12, 'Interpreter', 'none')
             subtitle(fg,mysubtitle, 'FontSize', 8, 'Interpreter', 'none')
 
             % save plot as png (todo: change to pdf and crop)
@@ -283,14 +269,13 @@ classdef MyGlider
 
         end
 
-
         % TODO move this to function for all classes
         function plotPos(obj, plotsubfolder, closeopt)
 
             % inputs (just changed to m)
-            pos1 = obj.posG;
+            pos1 = obj.posN_G;
             % position in SO
-            pos2 = obj.posSO;
+            pos2 = obj.posB_O;
             x = pos2(:, 1); 
             y = pos2(:, 2); 
             z = obj.height;
@@ -376,9 +361,9 @@ classdef MyGlider
             % where it's gonna be saved
             pfolder = strcat(obj.plotfolder, plotsubfolder);
             % change this for obj.gliderID and add b in the save file
-            mytitle = obj.gliderID;
-            mysubtitle = strcat(obj.takename, " - Position in SG vs SO");%, " [visible ", string(obj.pervalid), '%]');
-            mysavename = strcat(obj.takename, "pos_OG");
+            mytitle = obj.gliderID + 'Global data';
+            mysubtitle = strcat(obj.takename);%, " [visible ", string(obj.pervalid), '%]');
+            mysavename = strcat(obj.takename, "dataG");
 
             % figure title
             title(fg, mytitle, 'FontSize', 12)
@@ -392,12 +377,21 @@ classdef MyGlider
                 close
             end
 
+                        %%
+            % figure;
+            % plot(obj.time, obj.posG(:, 2), 'r')
+            % hold on
+            % %plot(obj.time, obj.height, 'b--')
+            % plot(obj.time, -obj.posSO(:, 3), 'k')
+            % title('Height Check')
+            % legend('Y-UP (raw)', '- $Z_O$', 'Interpreter', 'latex')
+
         end
 
         function plotpos3D(obj, plotsubfolder, closeopt)
             % plot data for analysis
 
-            pos1 = obj.posG;
+            pos1 = obj.posN_G;
             pos2 = obj.posN;
 
             t = obj.time;
@@ -489,6 +483,14 @@ classdef MyGlider
     end
 
     methods(Static)
+
+        function vec_S2 = changeFrame(vec_S1, DCM)
+            % INPUTS: pos_S1 [1x3]; DCM = 3x3
+            % OUTPUT: pos_S2 [1x3];
+            column_vec = DCM * vec_S1';
+            vec_S2 = column_vec';
+
+        end
 
         function [velvec, velmag] = computeVel(time, posarray)
 
@@ -598,6 +600,8 @@ classdef MyGlider
         end
 
         function DA_G = findDirection(pos)
+            
+
             % TODO replace by actual DCM >> done, delete
             % change DIRECTION (still with Z+ parallel to gravity)
             % DRG = obj.findDirection(obj.posG);
@@ -608,8 +612,9 @@ classdef MyGlider
             % number of samples
             n = size(pos,1);
             % get two samples in the middle ish
-            x1 = pos(n/3, 1);
-            x2 = pos(n/3 + 5, 1);
+            pt = round(n/2);
+            x1 = pos(pt, 1);
+            x2 = pos(pt + 5, 1);
 
             % find positive x direction
             if (x2 > x1)

@@ -228,19 +228,19 @@ classdef MyTake
 
             % TODO remove later
             if (contains(obj.bodyname, 'Pink') || contains(obj.bodyname, 'V2Glider'))
-                mytitle = strcat(obj.commoname, " [", obj.bodyname, "]");
+                mytitle = strcat(obj.commoname, " [", obj.bodyname, "]", "- Global Data");
             else
-                mytitle = obj.bodyname;
+                mytitle = obj.bodyname + " - Global Data";
             end
             %
 
             mysubtitle = [strcat(obj.name, ...
-                " [visible ", string(obj.pervalid), '%]', ' - Raw Data, trimmed')];
+                " [visible ", string(obj.pervalid), '%]')];
 
             % figure title
             title(fg, mytitle, 'FontSize', 12)
             subtitle(fg,mysubtitle, 'FontSize', 9, 'Interpreter', 'none');
-            mysavename = strcat(obj.name);
+            mysavename = strcat(obj.name, 'original');
 
 
             % save plot as png (todo: change to pdf and crop)

@@ -43,7 +43,7 @@ for k = 1:session.nFiles
     % plot tracking data in global coordinates
     plotfoldername = strcat("plots", "_", sessionfolder);
     % plot
-    % take.plotData(plotfoldername, closeplot);
+    take.plotData(plotfoldername, closeplot);
     % -----------------
     
     % new glider obj
@@ -59,7 +59,7 @@ for k = 1:session.nFiles
     %% Glider data 
 
     % position wrt SO
-    positionB_SO = glider.posSO;
+    positionB_SO = glider.posB_O;
 
     % rotation body wrt SO
     rotationB_SO = glider.rotB_O;

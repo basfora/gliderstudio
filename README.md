@@ -1,14 +1,28 @@
 # gliderstudio
-
+ 
+## Quick Start
 Download or clone this repository. It is easier to keep the current folder structure to avoid compiling errors.
-> Folder structure: gliderstudio > classes, plots, trackingData
+> Folder structure: gliderstudio > classes, plots, data
 
-* `trackingData`: data collected in the Motion Studio and saved as csv files
+
+Place .csv files you want to process inside `data/mydata`. 
+
+Run script `main.m`.
+
+Plots will be saved as into `plots/plots_mydata` (format: same-name-as-csv-file.png).
+
+Glider data (position, rotation and height) will be saved into a `.mat` file (format: same-name-as-csv-file.mat).
+
+## Structure and details
+
+* `data`: data collected in the Motion Studio and saved as csv files
   * any subfolder created here is referred as `sessionfolder`
+  * `mydata` : place here csv files you want to process
   * data60 : datasets where body was visible for 60% or more frames 
 * `plots`: generated plots will be saved here
   * any subfolder created here is referred as `plotfolder`
   * plotsdata60 : plots from data60 datasets
+  * `plots_mydata`: plots will be saved here
 * `classes`: custom for importing and managing tracking data (see below)
   * MyBatch : helps parsing through multiple files inside trackingData > `sessionfolder`
   * MyTake : helps importing and plotting tracking data from single csv file
