@@ -67,8 +67,11 @@ for k = 1:session.nFiles
     % height
     height = glider.height;
 
+    % time
+    time = glider.time;
+
     % save
-    save(glider.takename, "height", "rotationB_SO", "positionB_SO")
+    save(glider.takename, "time", "height", "rotationB_SO", "positionB_SO")
 
 end
 

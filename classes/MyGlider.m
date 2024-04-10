@@ -165,7 +165,7 @@ classdef MyGlider
             % SO to SG (zero to global) -- transpose of DO_G
             obj.DG_O = transpose(obj.DO_G);
             % SN to SB (nominal to body) - rotate 90 deg on xN
-            obj.DB_N = obj.getD1(90);
+            obj.DB_N = obj.DO_G;
 
         end
 
@@ -232,7 +232,7 @@ classdef MyGlider
 
             % ANGLE vs TIME wrt S0
             anglename = ["$\phi$", "$\theta$", "$\psi$"];
-            mycolor = ["k.", "k.", "k."];        
+            mycolor = ["k.", "c.", "y."];        
             for axx=1:3
 
                 nexttile
@@ -333,6 +333,7 @@ classdef MyGlider
 
             % ANGLE vs TIME wrt S0
             anglename = axisname;     
+            mycolor = ["k.", "c.", "y."];
             for axx=1:3
 
                 nexttile
