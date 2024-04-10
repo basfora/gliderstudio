@@ -5,7 +5,7 @@
 
 # ignore files inside these folders
 mydata/*.csv
-plots/plots_mydata/*.png
+
 
 # ignore ALL files in ANY directory named temp
 temp/
