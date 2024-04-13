@@ -34,24 +34,24 @@ classdef MyGlider
         posN_Gstart = zeros(1, 3);
         rotN_Gstart = zeros(1, 3);
         % shift SG origin to first data point
-        posN_Gtrans 
-        
+        posN_Gtrans
+
         % SO: (inertial) z-down, x+ direction of movement, origin at the
         % ground where glider was first seen
-        
-        posB_O        
+
+        posB_O
         % rotation body wrt to SO
         rotB_O
-        
+
         % ROTATION MATRICES
         % SG to SO (global to zero)
         DO_G = zeros(3,3);
-        % SO to SG (zero to global) 
+        % SO to SG (zero to global)
         DG_O = zeros(3,3);
         % SG to SN (global to nominal)
         DN_G = zeros(3,3);
         % SN to SB (nominal to body)
-        DB_N = zeros(3,3);        
+        DB_N = zeros(3,3);
 
         % to save plot
         plotfolder = "plots/"
@@ -81,10 +81,10 @@ classdef MyGlider
             % gradiente for discontinuities)
             % obj = obj.velDraft();
         end
-    
+
         function obj = modifydata(obj)
             %  make data user friendlier according to MAE5070 conventions
-            
+
             % ------------ save inputs using naming convention
             % position: turn mm to m
             obj.posN_G = obj.posinput/1000;
@@ -99,12 +99,12 @@ classdef MyGlider
             % starting point: position and rotation of SN wrt to SG
             obj.posN_Gstart = obj.posN_G(1, :);
             obj.rotN_Gstart = obj.rotN_G(1, :);
-            
-            % TRANSLATE SG to starting point: 
+
+            % TRANSLATE SG to starting point:
             % [xG, yG, zG] = [xG-xGstart, yG, zG - zGstart]
             deltaStartG = [obj.posN_Gstart(1), 0, obj.posN_Gstart(3)];
             obj.posN_Gtrans = obj.moveOrigin(obj.posN_G, deltaStartG);
-            
+
             % compute time invariant rotation matrices
             obj = obj.computeKnownDs();
 
@@ -112,10 +112,10 @@ classdef MyGlider
             n = size(obj.posN_G, 1);
             aux_pos = zeros(n, 3);
             aux_rot = zeros(n, 3);
-            
+
             % LOOP through each measurement
             for k=1:n
-                
+
                 % POSITION: from SG to SO at k
                 aux_pos(k, :) = obj.changeFrame(obj.posN_Gtrans(k, :), obj.DO_G);
 
@@ -140,26 +140,26 @@ classdef MyGlider
 
 
             % current measured angles (from Motive software)
-                phi = obj.rotN_G(k, 1);
-                theta = obj.rotN_G(k, 3);
-                yaw = obj.rotN_G(k, 2);
+            phi = obj.rotN_G(k, 1);
+            theta = obj.rotN_G(k, 3);
+            yaw = obj.rotN_G(k, 2);
 
-                % current rotation matrix (DCM)
-                xyz = [phi, theta, yaw]; seq = 123;
-                DNG_k = obj.getDmatrix(xyz, seq);
+            % current rotation matrix (DCM)
+            xyz = [phi, theta, yaw]; seq = 123;
+            DNG_k = obj.getDmatrix(xyz, seq);
 
-                % compute DB/0 (rot SB from S0)
-                DBO_k = DBN * DNG_k * DGO;
+            % compute DB/0 (rot SB from S0)
+            DBO_k = DBN * DNG_k * DGO;
 
-                % angles of interest (rotation of body wrt to SO)
-                eul_angles = rotm2eul(DBO_k, 'XYZ');
+            % angles of interest (rotation of body wrt to SO)
+            eul_angles = rotm2eul(DBO_k, 'XYZ');
 
         end
 
 
         function obj = computeKnownDs(obj)
 
-            % ROTATION MATRICES            
+            % ROTATION MATRICES
             % SG to SO (global to zero) - rotate 90 deg on xG
             obj.DO_G = obj.findDirection(obj.posN_G);
             % SO to SG (zero to global) -- transpose of DO_G
@@ -175,14 +175,14 @@ classdef MyGlider
             % (line 1) 3D position wrt to SO, Height instead of true Z
             % (line 2) position vs time (also in S0)
             % (line 3) angles taken from DB/O
-            
+
             % time
             t = obj.time;
-            
+
             % position wrt SO
             pos = obj.posB_O;
             x = pos(:, 1); y = pos(:, 2); z = obj.height;
-            
+
             % rotation SB wrt SO
             rot = obj.rotB_O;
 
@@ -192,7 +192,7 @@ classdef MyGlider
             % figure
             figure;
             fg = tiledlayout(3, 3);
-            
+
             % 3D POSITION in SO
             nexttile([1 3]);
             plot3(x, y, z, 'b.', 'MarkerSize', mkrsize1)
@@ -212,7 +212,7 @@ classdef MyGlider
             grid minor
             % [az, el] = view
             view([20, 30])
-            
+
             % POSITION vs TIME in SO
             axisname = ["$X_O$", "$Y_O$", "$Z_O$"];
             mycolor = ["r.", "m.", "g."];
@@ -231,8 +231,8 @@ classdef MyGlider
             end
 
             % ANGLE vs TIME wrt S0
-            anglename = ["$\phi$", "$\theta$", "$\psi$"];
-            mycolor = ["k.", "c.", "y."];        
+            anglename = ["Banking $\phi$", "Attack $\theta$", "Heading $\psi$"];
+            mycolor = ["k.", "c.", "y."];
             for axx=1:3
 
                 nexttile
@@ -268,20 +268,20 @@ classdef MyGlider
             end
 
         end
-        
+
         function plotOriginal(obj, plotsubfolder, closeopt)
             % PLOT in one figure
             % (line 1) 3D position wrt to SO, Height instead of true Z
             % (line 2) position vs time (also in S0)
             % (line 3) angles taken from DB/O
-            
+
             % time
             t = obj.time;
-            
+
             % position wrt SO
             pos = obj.posN_G;
             x = pos(:, 1); y = pos(:, 2); z = pos(:, 3);
-            
+
             % rotation SB wrt SO
             rot = obj.rotN_G;
 
@@ -291,7 +291,7 @@ classdef MyGlider
             % figure
             figure;
             fg = tiledlayout(3, 3);
-            
+
             % 3D POSITION in SO
             nexttile([1 3]);
             plot3(x, y, z, 'b.', 'MarkerSize', mkrsize1)
@@ -313,7 +313,7 @@ classdef MyGlider
             grid minor
             % [az, el] = view
             view([20, 30])
-            
+
             % POSITION vs TIME in SO
             axisname = ["$X_G$", "$Y_G$", "$Z_G$"];
             mycolor = ["r.", "m.", "g."];
@@ -332,7 +332,7 @@ classdef MyGlider
             end
 
             % ANGLE vs TIME wrt S0
-            anglename = axisname;     
+            anglename = axisname;
             mycolor = ["k.", "c.", "y."];
             for axx=1:3
 
@@ -377,8 +377,8 @@ classdef MyGlider
             pos1 = obj.posN_G;
             % position in SO
             pos2 = obj.posB_O;
-            x = pos2(:, 1); 
-            y = pos2(:, 2); 
+            x = pos2(:, 1);
+            y = pos2(:, 2);
             z = obj.height;
             % ----------------------
 
@@ -409,7 +409,7 @@ classdef MyGlider
             legend('boxon')
             grid on
             grid minor
-            
+
 
             % plot wrt SR0
             for axx=1:3
@@ -478,7 +478,7 @@ classdef MyGlider
                 close
             end
 
-                        %%
+            %%
             % figure;
             % plot(obj.time, obj.posG(:, 2), 'r')
             % hold on
@@ -563,7 +563,7 @@ classdef MyGlider
             end
 
         end
-        
+
         function obj = velDraft(obj)
             % velocity draft
             [vel_N, vel_mag] = obj.computeVel(obj.time, obj.posN);
@@ -580,7 +580,7 @@ classdef MyGlider
             % subplot(1, 4, 4)
             % plot(obj.time(2:end), obj.vmag)
         end
-        
+
     end
 
     methods(Static)
@@ -645,9 +645,9 @@ classdef MyGlider
             else
                 DCM = zeros(3,3);
             end
-        % Motive doc: the XYZ order indicates pitch is degree about the X axis,
-        % yaw is degree about the Y axis, and roll is degree about the Z axis
-        % pitch = angr(1); yaw = angr(2); roll = angr(3);
+            % Motive doc: the XYZ order indicates pitch is degree about the X axis,
+            % yaw is degree about the Y axis, and roll is degree about the Z axis
+            % pitch = angr(1); yaw = angr(2); roll = angr(3);
         end
 
         function D1 = getD1(phi)
@@ -701,7 +701,7 @@ classdef MyGlider
         end
 
         function DA_G = findDirection(pos)
-            
+
 
             % TODO replace by actual DCM >> done, delete
             % change DIRECTION (still with Z+ parallel to gravity)

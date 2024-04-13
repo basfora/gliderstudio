@@ -122,7 +122,7 @@ classdef MyTake
             obj.trackingdata = obj.allposes(rowstokeep, :);
             
             % angles (unwrap)
-            obj.rotationdata = obj.unwrapAngle(obj.trackingdata(:, 1:3));
+            obj.rotationdata = obj.trackingdata(:, 1:3);
             % position
             obj.positiondata = obj.trackingdata(:, 4:6);
             obj.goodn = size(obj.trackingdata, 1);
