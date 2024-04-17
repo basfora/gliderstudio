@@ -15,7 +15,7 @@ warning('off','all')
 
 % ------------------------------------------
 % save files inside mydata
-sessionfolder = "0415";
+sessionfolder = "mydata";
 % close figures after saving them; 1 to close, 0 to leave them open
 closeplot = 0;
 % ------------------------------------------
@@ -54,6 +54,7 @@ for k = 1:session.nFiles
     %  plot
     glider.plotOriginal(plotfoldername, closeplot) % comment when not debugging
     glider.plotStudio(plotfoldername, closeplot)
+    glider.plotRotation(plotfoldername, closeplot)
 
 
     %% Glider data 

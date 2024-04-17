@@ -179,7 +179,114 @@ classdef MyGlider
 
         %% PLOT functions
         function plotRotation(obj, plotsubfolder, closeopt)
+            
+            % time
+            t = obj.time;
+            n = size(t, 1);
 
+            % rotation matrix 90 deg x (then 180 if needed) 
+            DOG = [1, 0, 0; 
+                0, 0, 1; 
+                0, -1, 0];
+            disp('DO/G')
+            disp(DOG)
+
+            rotBO = zeros(n, 3);
+            alpha = zeros(n, 1);
+            beta = zeros(n, 1);
+            gamma = zeros(n, 1);
+
+
+            % align with So
+            for k = 1:n
+                new_ang = DOG * obj.rotinput(k, :)';
+                rotBO(k, :) = new_ang';
+            end
+
+            % unwrap
+            alpha = obj.unwrapAngle(rotBO(:, 1));
+            beta = obj.unwrapAngle(rotBO(:, 2));
+            gamma = obj.unwrapAngle(rotBO(:, 3));
+
+            rotBO = [alpha, beta, gamma]; 
+        
+            angback = zeros(n, 3);
+            % Euler 321 recover 
+            for k = 1:n
+                % extrinsic
+                DCM = obj.getD3(gamma(k)) * obj.getD2(beta(k)) * obj.getD1(alpha(k));
+                angle = rad2deg(rotm2eul(DCM, 'ZYX'));
+                angback(k, :) = angle;
+            end
+
+            for a=1:3
+                angback(:, a) = obj.unwrapAngle( angback(:, a));
+            end
+
+            % aestheticsuntitled3
+            mkrsize1 = 4; mkrsize2 = 3;
+            
+            % figure
+            figure;
+            fg = tiledlayout(3, 3);
+
+            for j=1:3
+                if j == 1
+                    % original from Motive
+                    dataplot = obj.rotinput;
+                elseif j == 2
+                    % rotating it
+                    dataplot = rotBO;
+                else
+                    % recover from DCM
+                   dataplot = angback;
+                end
+
+
+            axisname = ["$SG$", "$xDOG$", "$rot2euler$"];
+            mycolor = ["r.", "m.", "g."];
+            for axx=1:3
+
+                nexttile
+                plot(t, dataplot(:, axx), mycolor(axx), 'MarkerSize', mkrsize1)
+                hold on
+                grid on
+                xlabel('Time [sec]')
+
+                if axx == 1
+                        yname =  axisname(j);
+                        ylabel(yname)
+                end
+                % yname =  axisname(axx) + " [m]";
+                % ylabel(yname)
+                xlim([0 max(t)])
+                hold off
+            end
+
+            end
+
+
+
+        %% saving
+            % where it's gonna be saved
+            pfolder = strcat(obj.plotfolder, plotsubfolder);
+            % change this for obj.gliderID and add b in the save file
+            mytitle = obj.gliderID + " - " + "Rotation Data";
+            mysubtitle = strcat(obj.takename);%, " [visible ", string(obj.pervalid), '%]');
+            mysavename = strcat(obj.takename, "ROT");
+
+            % figure title
+            title(fg, mytitle, 'FontSize', 12, 'Interpreter', 'none')
+            subtitle(fg,mysubtitle, 'FontSize', 8, 'Interpreter', 'none')
+
+            % save plot as png (todo: change to pdf and crop)
+            saveas(gcf,fullfile(pfolder, mysavename), 'png')
+            hold off
+
+            if closeopt ~= 0
+                close
+            end
+                
         end
 
 

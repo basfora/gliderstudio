@@ -2,6 +2,7 @@
 *.log
 *.asv
 *.mat
+*.zip
 mydata/*.csv
 plots_mydata/*.png
 
@@ -16,10 +17,13 @@ GliderStudioDataProcessing.m
 0325/
 0412/
 plots_0412/
- 
+0412-2/
+0415/
+
 # my checking folder
 check/
 plots_check/
 datadebug/
 plots_datadebug/
+plots_0415/
 
