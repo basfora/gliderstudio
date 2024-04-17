@@ -135,6 +135,14 @@ classdef MyGlider
         function eul_angles = computeEuler(obj, k)
             % OUTPUT: new Euler Angles in radians
 
+            % angles between body and global wrt to global frame
+            % (extrinsic angles)
+            rotk_G = obj.rotN_G(k, :);
+            alpha = rotk_G(1); beta = rotk_G(2); gamma = rotk_G(3);
+
+            
+            
+
             % just for visibility
             DBN = obj.DB_N; DGO = obj.DG_O;
 
@@ -152,7 +160,7 @@ classdef MyGlider
             DBO_k = DBN * DNG_k * DGO;
 
             % angles of interest (rotation of body wrt to SO)
-            eul_angles = rotm2eul(DBO_k, 'XYZ');
+            eul_angles = rotm2eul(DBO_k, 'ZYX');
 
         end
 
@@ -170,6 +178,11 @@ classdef MyGlider
         end
 
         %% PLOT functions
+        function plotRotation(obj, plotsubfolder, closeopt)
+
+        end
+
+
         function plotStudio(obj, plotsubfolder, closeopt)
             % PLOT in one figure
             % (line 1) 3D position wrt to SO, Height instead of true Z

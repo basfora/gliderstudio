@@ -15,7 +15,7 @@ warning('off','all')
 
 % ------------------------------------------
 % save files inside mydata
-sessionfolder = "mydata";
+sessionfolder = "0415";
 % close figures after saving them; 1 to close, 0 to leave them open
 closeplot = 0;
 % ------------------------------------------
