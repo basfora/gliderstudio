@@ -121,7 +121,7 @@ classdef MyTake
             obj.frames = obj.allframes(rowstokeep, :);
             obj.trackingdata = obj.allposes(rowstokeep, :);
             
-            % angles (unwrap)
+            % angles 
             obj.rotationdata = obj.trackingdata(:, 1:3);
             % position
             obj.positiondata = obj.trackingdata(:, 4:6);
@@ -256,19 +256,6 @@ classdef MyTake
     end
 
     methods(Static)
-
-        function ang = unwrapAngle(anglearray)
-            % unwrap angle from -180, 180 to -inf, inf to avoid
-            % discontinuities
-
-            % radians
-            ang_rad = deg2rad(anglearray);
-            % if there are jumps, replace by complement
-            ang_rad_unwr = unwrap(ang_rad);
-            % back to degrees
-            ang = rad2deg(ang_rad_unwr);
-
-        end
 
         function bodyname = headerRow(rel_path, k)
             % Read the header row

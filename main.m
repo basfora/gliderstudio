@@ -54,8 +54,6 @@ for k = 1:session.nFiles
     %  plot
     glider.plotOriginal(plotfoldername, closeplot) % comment when not debugging
     glider.plotStudio(plotfoldername, closeplot)
-    glider.plotRotation(plotfoldername, closeplot)
-
 
     %% Glider data 
 

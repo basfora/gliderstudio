@@ -46,12 +46,6 @@ classdef MyGlider
         % ROTATION MATRICES
         % SG to SO (global to zero)
         DO_G = zeros(3,3);
-        % SO to SG (zero to global)
-        DG_O = zeros(3,3);
-        % SG to SN (global to nominal)
-        DN_G = zeros(3,3);
-        % SN to SB (nominal to body)
-        DB_N = zeros(3,3);
 
         % to save plot
         plotfolder = "plots/"
@@ -76,10 +70,6 @@ classdef MyGlider
 
             % make data nicer
             obj = obj.modifydata();
-
-            % draft of velocity (finite dif, check with diff or
-            % gradiente for discontinuities)
-            % obj = obj.velDraft();
         end
 
         function obj = modifydata(obj)
@@ -106,7 +96,7 @@ classdef MyGlider
             obj.posN_Gtrans = obj.moveOrigin(obj.posN_G, deltaStartG);
 
             % compute time invariant rotation matrices
-            obj = obj.computeKnownDs();
+            obj.DO_G = obj.findDirection(obj.posN_G);
 
             % set size up
             n = size(obj.posN_G, 1);
@@ -120,7 +110,12 @@ classdef MyGlider
                 aux_pos(k, :) = obj.changeFrame(obj.posN_Gtrans(k, :), obj.DO_G);
 
                 % ANGLE: we want SB wrt S0 at k
-                aux_rot(k, :) = obj.computeEuler(k);
+                DCM = obj.getDmatrix(obj.rotN_G(k,:), 123);
+                ang_rad = rotm2eul(DCM, 'zyx');
+
+
+                % ang_rad = deg2rad(obj.rotN_G(k,:));
+                aux_rot(k, :) = obj.changeFrame(ang_rad, obj.DO_G);
 
             end
 
@@ -128,168 +123,11 @@ classdef MyGlider
             obj.posB_O = aux_pos;
 
             % save rotation of B wrt S0
-            obj.rotB_O = rad2deg(unwrap(aux_rot));
+            obj.rotB_O = obj.unwrapAngle(aux_rot, true);
 
         end
 
-        function eul_angles = computeEuler(obj, k)
-            % OUTPUT: new Euler Angles in radians
-
-            % angles between body and global wrt to global frame
-            % (extrinsic angles)
-            rotk_G = obj.rotN_G(k, :);
-            alpha = rotk_G(1); beta = rotk_G(2); gamma = rotk_G(3);
-
-            
-            
-
-            % just for visibility
-            DBN = obj.DB_N; DGO = obj.DG_O;
-
-
-            % current measured angles (from Motive software)
-            phi = obj.rotN_G(k, 1);
-            theta = obj.rotN_G(k, 3);
-            yaw = obj.rotN_G(k, 2);
-
-            % current rotation matrix (DCM)
-            xyz = [phi, theta, yaw]; seq = 123;
-            DNG_k = obj.getDmatrix(xyz, seq);
-
-            % compute DB/0 (rot SB from S0)
-            DBO_k = DBN * DNG_k * DGO;
-
-            % angles of interest (rotation of body wrt to SO)
-            eul_angles = rotm2eul(DBO_k, 'ZYX');
-
-        end
-
-
-        function obj = computeKnownDs(obj)
-
-            % ROTATION MATRICES
-            % SG to SO (global to zero) - rotate 90 deg on xG
-            obj.DO_G = obj.findDirection(obj.posN_G);
-            % SO to SG (zero to global) -- transpose of DO_G
-            obj.DG_O = transpose(obj.DO_G);
-            % SN to SB (nominal to body) - rotate 90 deg on xN
-            obj.DB_N = obj.DO_G;
-
-        end
-
-        %% PLOT functions
-        function plotRotation(obj, plotsubfolder, closeopt)
-            
-            % time
-            t = obj.time;
-            n = size(t, 1);
-
-            % rotation matrix 90 deg x (then 180 if needed) 
-            DOG = [1, 0, 0; 
-                0, 0, 1; 
-                0, -1, 0];
-            disp('DO/G')
-            disp(DOG)
-
-            rotBO = zeros(n, 3);
-            alpha = zeros(n, 1);
-            beta = zeros(n, 1);
-            gamma = zeros(n, 1);
-
-
-            % align with So
-            for k = 1:n
-                new_ang = DOG * obj.rotinput(k, :)';
-                rotBO(k, :) = new_ang';
-            end
-
-            % unwrap
-            alpha = obj.unwrapAngle(rotBO(:, 1));
-            beta = obj.unwrapAngle(rotBO(:, 2));
-            gamma = obj.unwrapAngle(rotBO(:, 3));
-
-            rotBO = [alpha, beta, gamma]; 
-        
-            angback = zeros(n, 3);
-            % Euler 321 recover 
-            for k = 1:n
-                % extrinsic
-                DCM = obj.getD3(gamma(k)) * obj.getD2(beta(k)) * obj.getD1(alpha(k));
-                angle = rad2deg(rotm2eul(DCM, 'ZYX'));
-                angback(k, :) = angle;
-            end
-
-            for a=1:3
-                angback(:, a) = obj.unwrapAngle( angback(:, a));
-            end
-
-            % aestheticsuntitled3
-            mkrsize1 = 4; mkrsize2 = 3;
-            
-            % figure
-            figure;
-            fg = tiledlayout(3, 3);
-
-            for j=1:3
-                if j == 1
-                    % original from Motive
-                    dataplot = obj.rotinput;
-                elseif j == 2
-                    % rotating it
-                    dataplot = rotBO;
-                else
-                    % recover from DCM
-                   dataplot = angback;
-                end
-
-
-            axisname = ["$SG$", "$xDOG$", "$rot2euler$"];
-            mycolor = ["r.", "m.", "g."];
-            for axx=1:3
-
-                nexttile
-                plot(t, dataplot(:, axx), mycolor(axx), 'MarkerSize', mkrsize1)
-                hold on
-                grid on
-                xlabel('Time [sec]')
-
-                if axx == 1
-                        yname =  axisname(j);
-                        ylabel(yname)
-                end
-                % yname =  axisname(axx) + " [m]";
-                % ylabel(yname)
-                xlim([0 max(t)])
-                hold off
-            end
-
-            end
-
-
-
-        %% saving
-            % where it's gonna be saved
-            pfolder = strcat(obj.plotfolder, plotsubfolder);
-            % change this for obj.gliderID and add b in the save file
-            mytitle = obj.gliderID + " - " + "Rotation Data";
-            mysubtitle = strcat(obj.takename);%, " [visible ", string(obj.pervalid), '%]');
-            mysavename = strcat(obj.takename, "ROT");
-
-            % figure title
-            title(fg, mytitle, 'FontSize', 12, 'Interpreter', 'none')
-            subtitle(fg,mysubtitle, 'FontSize', 8, 'Interpreter', 'none')
-
-            % save plot as png (todo: change to pdf and crop)
-            saveas(gcf,fullfile(pfolder, mysavename), 'png')
-            hold off
-
-            if closeopt ~= 0
-                close
-            end
-                
-        end
-
-
+       %% PLOT functions
         function plotStudio(obj, plotsubfolder, closeopt)
             % PLOT in one figure
             % (line 1) 3D position wrt to SO, Height instead of true Z
@@ -334,35 +172,41 @@ classdef MyGlider
             view([20, 30])
 
             % POSITION vs TIME in SO
-            axisname = ["$X_O$", "$Y_O$", "$Z_O$"];
+            axisname = ["${X}^{B/O}_{O}$", "${Y}^{B/O}_{O}$", "${Z}^{B/O}_{O}$"];
             mycolor = ["r.", "m.", "g."];
             for axx=1:3
 
                 nexttile
                 plot(t, pos(:, axx), mycolor(axx), 'MarkerSize', mkrsize1)
                 hold on
-                title('Position')
+                %if axx == 1
+                    yname = "Position [m]";
+                    ylabel(yname, 'FontSize',10)
+                %end
                 grid on
                 xlabel('Time [sec]')
-                yname =  axisname(axx) + " [m]";
-                ylabel(yname)
+                title(axisname(axx), 'FontSize',11, 'FontWeight','bold')
                 xlim([0 max(t)])
                 hold off
             end
 
             % ANGLE vs TIME wrt S0
+            anglename = ["Roll $\phi$", "Pitch $\theta$", "Yaw $\psi$"];
             anglename = ["Banking $\phi$", "Attack $\theta$", "Heading $\psi$"];
-            mycolor = ["k.", "c.", "y."];
+            % mycolor = ["k.", "c.", "y."];
             for axx=1:3
 
                 nexttile
                 plot(t, rot(:, axx), mycolor(axx), 'MarkerSize', mkrsize1)
                 hold on
+                %if axx == 1
+                    yname = "Rotation [deg]";
+                    ylabel(yname, 'FontSize',10, 'FontWeight','bold')
+                %end
                 title('Rotation')
                 grid on
                 xlabel('Time [sec]')
-                yname =  anglename(axx) + " [deg]";
-                ylabel(yname)
+                title(anglename(axx), 'FontSize',12)
                 xlim([0 max(t)])
                 hold off
             end
@@ -373,7 +217,7 @@ classdef MyGlider
             % change this for obj.gliderID and add b in the save file
             mytitle = obj.gliderID + " - " + "Body Data";
             mysubtitle = strcat(obj.takename);%, " [visible ", string(obj.pervalid), '%]');
-            mysavename = strcat(obj.takename, "main");
+            mysavename = strcat(obj.takename, "_main");
 
             % figure title
             title(fg, mytitle, 'FontSize', 12, 'Interpreter', 'none')
@@ -381,6 +225,10 @@ classdef MyGlider
 
             % save plot as png (todo: change to pdf and crop)
             saveas(gcf,fullfile(pfolder, mysavename), 'png')
+            
+            % save plot as matlab fig
+            saveas(gcf,fullfile(pfolder, mysavename), 'mfig')
+
             hold off
 
             if closeopt ~= 0
@@ -435,7 +283,7 @@ classdef MyGlider
             view([20, 30])
 
             % POSITION vs TIME in SO
-            axisname = ["$X_G$", "$Y_G$", "$Z_G$"];
+            axisname = ["$X^{N/G}_{G}$", "$Y^{N/G}_{G}$", "$Z^{N/G}_{G}$"];
             mycolor = ["r.", "m.", "g."];
             for axx=1:3
 
@@ -474,7 +322,7 @@ classdef MyGlider
             % change this for obj.gliderID and add b in the save file
             mytitle = obj.gliderID + " - " + "Global Data";
             mysubtitle = strcat(obj.takename);%, " [visible ", string(obj.pervalid), '%]');
-            mysavename = strcat(obj.takename, "original");
+            mysavename = strcat(obj.takename, "_original");
 
             % figure title
             title(fg, mytitle, 'FontSize', 12, 'Interpreter', 'none')
@@ -490,217 +338,6 @@ classdef MyGlider
 
         end
 
-        % TODO move this to function for all classes
-        function plotPos(obj, plotsubfolder, closeopt)
-
-            % inputs (just changed to m)
-            pos1 = obj.posN_G;
-            % position in SO
-            pos2 = obj.posB_O;
-            x = pos2(:, 1);
-            y = pos2(:, 2);
-            z = obj.height;
-            % ----------------------
-
-            % time
-            tG = obj.timeinput;
-            t = obj.time;
-
-            % handy
-            mkrsize1 = 4; mkrsize2 = 6;
-
-            % figure
-            figure;
-            fg = tiledlayout(3, 3);
-
-            nexttile([1 3]);
-            plot3(x, y, z, 'b.', 'MarkerSize', mkrsize1)
-            hold on
-            % initial collected point
-            plot3(x(1), y(1), z(1), 'r*', 'MarkerSize', mkrsize2)
-            % axis equal
-            set(gca, 'YDir', 'reverse')
-            % axis
-            xlabel('$X_{O}$ [m]')
-            ylabel('$Y_{O}$ [m]')
-            zlabel('Height [m]')
-            % legend
-            legend('data pts', 'first pt', 'Location', 'southeast', 'FontSize', 7)
-            legend('boxon')
-            grid on
-            grid minor
-
-
-            % plot wrt SR0
-            for axx=1:3
-                if axx == 1
-                    axisname = "$X_O$";
-                elseif axx == 2
-                    axisname = "$Y_O$";
-                else
-                    axisname = "$Z_O$";
-                end
-
-                nexttile
-                plot(t, pos2(:, axx), 'k.', 'MarkerSize', mkrsize1)
-                hold on
-                grid on
-                xlabel('Time [sec]')
-
-
-                yname = "Position " + axisname + " [m]";
-                ylabel(yname)
-                hold off
-            end
-
-            % plot wrt SG
-            for axx=1:3
-                if axx == 1
-                    axisname = "$X_G$";
-                    mycolor = 'r.';
-                elseif axx == 2
-                    axisname = "$Y_G$";
-                    mycolor = 'g.';
-                else
-                    axisname = "$Z_G$";
-                    mycolor = 'b.';
-                end
-
-                nexttile
-                plot(tG, pos1(:, axx), mycolor, 'MarkerSize', mkrsize1)
-                hold on
-                grid on
-                xlabel('Time [sec]')
-
-
-                yname = "Position " + axisname + " [m]";
-                ylabel(yname)
-                hold off
-            end
-
-            %% saving
-            % where it's gonna be saved
-            pfolder = strcat(obj.plotfolder, plotsubfolder);
-            % change this for obj.gliderID and add b in the save file
-            mytitle = obj.gliderID + 'Global data';
-            mysubtitle = strcat(obj.takename);%, " [visible ", string(obj.pervalid), '%]');
-            mysavename = strcat(obj.takename, "dataG");
-
-            % figure title
-            title(fg, mytitle, 'FontSize', 12)
-            subtitle(fg,mysubtitle, 'FontSize', 8, 'Interpreter', 'none')
-
-            % save plot as png (todo: change to pdf and crop)
-            saveas(gcf,fullfile(pfolder, mysavename), 'png')
-            hold off
-
-            if closeopt ~= 0
-                close
-            end
-
-            %%
-            % figure;
-            % plot(obj.time, obj.posG(:, 2), 'r')
-            % hold on
-            % %plot(obj.time, obj.height, 'b--')
-            % plot(obj.time, -obj.posSO(:, 3), 'k')
-            % title('Height Check')
-            % legend('Y-UP (raw)', '- $Z_O$', 'Interpreter', 'latex')
-
-        end
-
-        function plotpos3D(obj, plotsubfolder, closeopt)
-            % plot data for analysis
-
-            pos1 = obj.posN_G;
-            pos2 = obj.posN;
-
-            t = obj.time;
-            % -----------------------------------------
-
-
-            figure;
-
-            % plot body trajectory in 3D
-            % subplot(2,2,1)
-            fg = tiledlayout(2, 1);
-
-            mkrsize1 = 4; mkrsize2 = 6;
-
-            for i = 1:2
-                if i == 1
-                    x = pos1(:, 1); y = pos1(:, 2); z = pos1(:, 3);
-                    xl = '$X_{G}$ [m]'; yl = "$Y_{G}$ [m]"; zl = "$Z_{G}$ [m]";
-                else
-                    x = pos2(:, 1); y = pos2(:, 2); z = pos2(:, 3);
-                    xl = '$X_{N}$ [m]'; yl = "$Y_{N}$ [m]"; zl = "$Z_{N}$ [m]";
-                end
-
-                nexttile;
-                plot3(x, y, z, 'b.', 'MarkerSize', mkrsize1)
-                if i == 1
-                    % Y-UP
-                    camup([0 1 0])
-                else
-                    set(gca, 'ZDir', 'reverse')
-                end
-                hold on
-                % initial collected point
-                plot3(x(1), y(1), z(1), 'r*', 'MarkerSize', mkrsize2)
-                axis equal
-
-                % axis
-                xlabel(xl)
-                ylabel(yl)
-                zlabel(zl)
-                % legend
-                legend('data pts', 'first pt', 'Location', 'southeast', 'FontSize', 7)
-                legend('boxon')
-                grid on
-                grid minor
-
-            end
-
-            %% saving
-            % where it's gonna be saved
-            pfolder = strcat(obj.plotfolder, plotsubfolder);
-            % change this for obj.gliderID and add b in the save file
-            mytitle = obj.gliderID;
-            mysubtitle = strcat(obj.takename, " - Plot D");%, " [visible ", string(obj.pervalid), '%]');
-
-            mysavename = strcat(obj.takename, "D");
-
-            % figure title
-            title(fg, mytitle, 'FontSize', 12)
-            subtitle(fg,mysubtitle, 'FontSize', 8, 'Interpreter', 'none')
-
-            % save plot as png (todo: change to pdf and crop)
-            saveas(gcf,fullfile(pfolder, mysavename), 'png')
-            hold off
-
-            if closeopt ~= 0
-                close
-            end
-
-        end
-
-        function obj = velDraft(obj)
-            % velocity draft
-            [vel_N, vel_mag] = obj.computeVel(obj.time, obj.posN);
-            obj.vN = vel_N;
-            obj.vmag = vel_mag;
-
-            % figure;
-            % for i =1:3
-            %     subplot(1,4,i)
-            %     plot(obj.time(2:end), obj.vN(:, i))
-            %     hold on
-            % end
-            %
-            % subplot(1, 4, 4)
-            % plot(obj.time(2:end), obj.vmag)
-        end
-
     end
 
     methods(Static)
@@ -712,34 +349,73 @@ classdef MyGlider
             vec_S2 = column_vec';
 
         end
+        
+        function newpos = moveOrigin(posG, pos0G)
+            % move origin to where the glider was first seen
+            % ie translate according to first data pt
 
-        function [velvec, velmag] = computeVel(time, posarray)
+            if ~exist('pos0G', 'var')
+                % first position point wrt SG
+                pos0G = posG(1, :);
+            end
 
-            x = posarray(:, 1); y = posarray(:, 2); z = posarray(:, 3);
+            % translate all positions to be wrt to reference origin
+            newpos = posG - pos0G;
+        end
+        
+        function ang = unwrapAngle(anglearray, rad)
+            % unwrap angle from -180, 180 to -inf, inf to avoid
+            % discontinuities
+            
+            if ~rad
+                % radians
+                ang_rad = deg2rad(anglearray);
+            else
+                ang_rad = anglearray;
+            end
 
-            % finite diference
-            velx = (x(2:end) - x(1:end-1))./(time(2:end) - time(1:end-1));
-            vely = (y(2:end) - y(1:end-1))./(time(2:end) - time(1:end-1));
-            velz = (z(2:end) - z(1:end-1))./(time(2:end) - time(1:end-1));
+            dim = size(anglearray, 2);
+            % increase allocation speed
+            new_ang = ang_rad;
 
-            velvec = [velx, vely, velz];
+            for k=1:dim
+                % if there are jumps, replace by complement
+                new_ang(:, k) = unwrap(ang_rad(:, k));
+            end
 
-            velmag = sqrt( velx.^2 + vely.^2 + velz.^2 );
+            % back to degrees
+            ang = rad2deg(new_ang);
 
         end
 
+        function DA_G = findDirection(pos)
+            % change DIRECTION (still with Z+ parallel to gravity)
+            % DRG = obj.findDirection(obj.posG);
 
-        function newpos = rotatebyD(pos, DCM)
-            % TODO change this to matrix multiplication (tired now)
+            % direction of axis depending on where the glider is facing
+            DA_G = zeros(3, 3);
 
-            n = size(pos, 1);
-            newpos = zeros(n, 3);
+            % number of samples
+            n = size(pos,1);
+            % get two samples in the middle ish
+            pt = round(n/3);
+            x1 = pos(pt, 1);
+            x2 = pos(pt + 5, 1);
 
-            for i=1:n
-                % DCM(3,3) * pos(3,1) = (3,1)
-                vec = DCM * pos(i, :)';
-                newpos(i,:) = vec';
+            % find positive x direction
+            if (x2 > x1)
+                % throwing neg to pos, keep sign for x
+                DA_G(1, :) = [1 0 0];
+                % keep sign, y = z
+                DA_G(2, :) = [0 0 1];
+            else
+                % throwing neg to pos, invert sign for x
+                DA_G(1, :) = [-1 0 0];
+                % invert sign, y = -z
+                DA_G(2, :) = [0 0 -1];
             end
+            % z' = -y' (always, up and down directions)
+            DA_G(3, :) = [0 -1 0];
 
 
         end
@@ -792,67 +468,6 @@ classdef MyGlider
             D3 = [cos(psi), sin(psi), 0;...
                 -sin(psi), cos(psi), 0;...
                 0, 0, 1];
-        end
-
-        function newpos = moveOrigin(posG, pos0G)
-            % move origin to where the glider was first seen
-            % ie translate according to first data pt
-
-            if ~exist('pos0G', 'var')
-                % first position point wrt SG
-                pos0G = posG(1, :);
-            end
-
-            % translate all positions to be wrt to reference origin
-            newpos = posG - pos0G;
-        end
-
-        function ang = unwrapAngle(anglearray)
-            % unwrap angle from -180, 180 to -inf, inf to avoid
-            % discontinuities
-
-            % radians
-            ang_rad = deg2rad(anglearray);
-            % if there are jumps, replace by complement
-            ang_rad_unwr = unwrap(ang_rad);
-            % back to degrees
-            ang = rad2deg(ang_rad_unwr);
-
-        end
-
-        function DA_G = findDirection(pos)
-
-
-            % TODO replace by actual DCM >> done, delete
-            % change DIRECTION (still with Z+ parallel to gravity)
-            % DRG = obj.findDirection(obj.posG);
-
-            % direction of axis depending on where the glider is facing
-            DA_G = zeros(3, 3);
-
-            % number of samples
-            n = size(pos,1);
-            % get two samples in the middle ish
-            pt = round(n/2);
-            x1 = pos(pt, 1);
-            x2 = pos(pt + 5, 1);
-
-            % find positive x direction
-            if (x2 > x1)
-                % throwing neg to pos, keep sign for x
-                DA_G(1, :) = [1 0 0];
-                % keep sign, y = z
-                DA_G(2, :) = [0 0 1];
-            else
-                % throwing neg to pos, invert sign for x
-                DA_G(1, :) = [-1 0 0];
-                % invert sign, y = -z
-                DA_G(2, :) = [0 0 -1];
-            end
-            % z' = -y' (always, up and down directions)
-            DA_G(3, :) = [0 -1 0];
-
-
         end
 
     end
