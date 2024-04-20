@@ -27,12 +27,13 @@ classdef MyGlider
         % cartesian coordinate systems:
         % SG: global, Motion Studio during data collection (inertial)
         posN_G
+        rot_quat
         rotN_G
         height
 
         % origin data pt
         posN_Gstart = zeros(1, 3);
-        rotN_Gstart = zeros(1, 3);
+        rotN_Gstart = zeros(1, 4);
         % shift SG origin to first data point
         posN_Gtrans
 
@@ -80,15 +81,15 @@ classdef MyGlider
             obj.posN_G = obj.posinput/1000;
             % height is the measurement in yG direction
             obj.height = obj.posN_G(:, 2);
-            % rotation: save
-            obj.rotN_G = obj.rotinput;
+            % rotation: save (in quaternions)
+            obj.rot_quat = obj.rotinput;
             % time: shift to start at zero
             obj.time = obj.moveOrigin(obj.timeinput);
             % ------------
 
             % starting point: position and rotation of SN wrt to SG
             obj.posN_Gstart = obj.posN_G(1, :);
-            obj.rotN_Gstart = obj.rotN_G(1, :);
+            obj.rotN_Gstart = obj.rot_quat(1, :);
 
             % TRANSLATE SG to starting point:
             % [xG, yG, zG] = [xG-xGstart, yG, zG - zGstart]
@@ -100,8 +101,11 @@ classdef MyGlider
 
             % set size up
             n = size(obj.posN_G, 1);
+            obj.rotN_G = zeros(n, 3);
             aux_pos = zeros(n, 3);
             aux_rot = zeros(n, 3);
+
+            qIdentity = quaternion( 0, 0, 0, 1 );
 
             % LOOP through each measurement
             for k=1:n
@@ -110,12 +114,31 @@ classdef MyGlider
                 aux_pos(k, :) = obj.changeFrame(obj.posN_Gtrans(k, :), obj.DO_G);
 
                 % ANGLE: we want SB wrt S0 at k
-                DCM = obj.getDmatrix(obj.rotN_G(k,:), 123);
-                ang_rad = rotm2eul(DCM, 'zyx');
+
+                % quaternion (measured)
+                x = obj.rot_quat(k, 1); y = obj.rot_quat(k, 2); 
+                z = obj.rot_quat(k, 3); w= obj.rot_quat(k, 4);
+                % define
+                q_in = quaternion(x, y, z, w);
+                q = mtimes(q_in, qIdentity);
+                % euler angles in rad
+                ang_rad = quat2eul( q , 'zyx' );
+                % save angN_G
+                obj.rotN_G(k, :) = rad2deg(ang_rad);
+
+                %
+                DCM = obj.getDmatrix(ang_rad, 321);
+                rot = obj.DO_G * DCM;
+
+                ang_O = obj.DO_G * (obj.rotN_G(k, :))';%rotm2eul(rot, 'zyx');
+                % -----
+
+                %DCM = obj.getDmatrix(obj.rotN_G(k,:), 123);
+                %ang_rad = rotm2eul(DCM, 'zyx');
 
 
                 % ang_rad = deg2rad(obj.rotN_G(k,:));
-                aux_rot(k, :) = obj.changeFrame(ang_rad, obj.DO_G);
+                aux_rot(k, :) = (ang_O');%obj.changeFrame(ang_rad, obj.DO_G);
 
             end
 
@@ -239,9 +262,9 @@ classdef MyGlider
 
         function plotOriginal(obj, plotsubfolder, closeopt)
             % PLOT in one figure
-            % (line 1) 3D position wrt to SO, Height instead of true Z
-            % (line 2) position vs time (also in S0)
-            % (line 3) angles taken from DB/O
+            % (line 1) 3D position wrt to SG, Height instead of true Z
+            % (line 2) position vs time (also in SG)
+            % (line 3) angles wrt to SG
 
             % time
             t = obj.time;
@@ -447,15 +470,13 @@ classdef MyGlider
         end
 
         function D1 = getD1(phi)
-            phi = deg2rad(phi);
-
+            
             D1 = [1, 0, 0; ...
                 0, cos(phi), sin(phi); ...
                 0, -sin(phi), cos(phi)];
         end
 
         function D2 = getD2(theta)
-            theta = deg2rad(theta);
 
             D2 = [cos(theta), 0, -sin(theta);...
                 0, 1, 0; ...
@@ -463,7 +484,6 @@ classdef MyGlider
         end
 
         function D3 = getD3(psi)
-            psi = deg2rad(psi);
 
             D3 = [cos(psi), sin(psi), 0;...
                 -sin(psi), cos(psi), 0;...
