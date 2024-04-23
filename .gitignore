@@ -3,8 +3,6 @@
 *.asv
 *.mat
 *.zip
-mydata/*.csv
-plots_mydata/*.png
 
 # ignore ALL files in ANY directory named temp
 temp/
