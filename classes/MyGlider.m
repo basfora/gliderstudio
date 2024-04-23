@@ -103,9 +103,7 @@ classdef MyGlider
             n = size(obj.posN_G, 1);
             obj.rotN_G = zeros(n, 3);
             aux_pos = zeros(n, 3);
-            aux_rot = zeros(n, 3);
-
-            qIdentity = quaternion( 0, 0, 0, 1 );
+            rot_body = zeros(n, 3);
 
             % LOOP through each measurement
             for k=1:n
@@ -113,40 +111,29 @@ classdef MyGlider
                 % POSITION: from SG to SO at k
                 aux_pos(k, :) = obj.changeFrame(obj.posN_Gtrans(k, :), obj.DO_G);
 
-                % ANGLE: we want SB wrt S0 at k
+                % ANGLE quaternion (measured)
+                qx = obj.rot_quat(k, 1); qy = obj.rot_quat(k, 2); 
+                qz = obj.rot_quat(k, 3); qw= obj.rot_quat(k, 4);
+                q_array = [qx, qy, qz, qw];
 
-                % quaternion (measured)
-                x = obj.rot_quat(k, 1); y = obj.rot_quat(k, 2); 
-                z = obj.rot_quat(k, 3); w= obj.rot_quat(k, 4);
-                % define
-                q_in = quaternion(x, y, z, w);
-                q = mtimes(q_in, qIdentity);
-                % euler angles in rad
-                ang_rad = quat2eul( q , 'zyx' );
-                % save angN_G
-                obj.rotN_G(k, :) = rad2deg(ang_rad);
-
-                %
-                DCM = obj.getDmatrix(ang_rad, 321);
-                rot = obj.DO_G * DCM;
-
-                ang_O = obj.DO_G * (obj.rotN_G(k, :))';%rotm2eul(rot, 'zyx');
-                % -----
-
-                %DCM = obj.getDmatrix(obj.rotN_G(k,:), 123);
-                %ang_rad = rotm2eul(DCM, 'zyx');
-
-
-                % ang_rad = deg2rad(obj.rotN_G(k,:));
-                aux_rot(k, :) = (ang_O');%obj.changeFrame(ang_rad, obj.DO_G);
+                 % SN wrt SG original (deg)
+                [euxG, euyG, euzG] = obj.NatRot(q_array);
+                obj.rotN_G(k, :) = [euxG, euyG, euzG];
+                
+                % get corresponding Tait-Bryan angles SB wrt SO (deg)
+                [roll, pitch, yaw] = obj.bodyRot(q_array, obj.DO_G);
+                rot_body(k, :) = [roll, pitch, yaw]; 
 
             end
 
-            % save position of glider wrt SO
-            obj.posB_O = aux_pos;
+            % save rot SN wrt SG for checks
+            obj.rotN_G = obj.unwrapAngle(obj.rotN_G, false);
 
             % save rotation of B wrt S0
-            obj.rotB_O = obj.unwrapAngle(aux_rot, true);
+            obj.rotB_O = obj.unwrapAngle(rot_body, false);
+
+            % save position of glider wrt SO
+            obj.posB_O = aux_pos;
 
         end
 
@@ -200,12 +187,20 @@ classdef MyGlider
             for axx=1:3
 
                 nexttile
-                plot(t, pos(:, axx), mycolor(axx), 'MarkerSize', mkrsize1)
-                hold on
+                if axx == 3
+                    % plot height
+                    plot(t, z, mycolor(axx), 'MarkerSize', mkrsize1)
+                else
+                    plot(t, pos(:, axx), mycolor(axx), 'MarkerSize', mkrsize1)
+                end
+                    hold on
                 %if axx == 1
                     yname = "Position [m]";
                     ylabel(yname, 'FontSize',10)
                 %end
+                % if axx == 3
+                %     set(gca, 'ZDir', 'reverse')
+                % end
                 grid on
                 xlabel('Time [sec]')
                 title(axisname(axx), 'FontSize',11, 'FontWeight','bold')
@@ -215,7 +210,7 @@ classdef MyGlider
 
             % ANGLE vs TIME wrt S0
             anglename = ["Roll $\phi$", "Pitch $\theta$", "Yaw $\psi$"];
-            anglename = ["Banking $\phi$", "Attack $\theta$", "Heading $\psi$"];
+            %anglename = ["Banking $\phi$", "Attack $\theta$", "Heading $\psi$"];
             % mycolor = ["k.", "c.", "y."];
             for axx=1:3
 
@@ -246,11 +241,11 @@ classdef MyGlider
             title(fg, mytitle, 'FontSize', 12, 'Interpreter', 'none')
             subtitle(fg,mysubtitle, 'FontSize', 8, 'Interpreter', 'none')
 
-            % save plot as png (todo: change to pdf and crop)
+            % save plot as png 
             saveas(gcf,fullfile(pfolder, mysavename), 'png')
             
             % save plot as matlab fig
-            saveas(gcf,fullfile(pfolder, mysavename), 'mfig')
+            saveas(gcf, fullfile(pfolder, mysavename), 'fig')
 
             hold off
 
@@ -269,11 +264,11 @@ classdef MyGlider
             % time
             t = obj.time;
 
-            % position wrt SO
+            % position wrt SG
             pos = obj.posN_G;
             x = pos(:, 1); y = pos(:, 2); z = pos(:, 3);
 
-            % rotation SB wrt SO
+            % rotation SN wrt SG
             rot = obj.rotN_G;
 
             % aestheticsuntitled3
@@ -364,6 +359,50 @@ classdef MyGlider
     end
 
     methods(Static)
+
+        function [roll, pitch, yaw] = bodyRot(quat_array, DOG)
+            % turns:
+            % measured quaternion rotation (from Optitrack) wrt SG
+            % into Tait–Bryan angles, sequence 'ZYX'wrt SO
+            % INPUTS:
+            % quat_array = [qx, qy, qz, qw]
+            % DOG : DCM [3x3] for SG to SO
+            % OUTPUT:
+            % roll, pitch, yaw in DEG
+
+            % Adapted from NatNet SDK 4.1.1 > Samples > MATLAB
+            [eulerx, eulery, eulerz] = MyGlider.NatRot(quat_array);
+            
+            % use MAE5070 conventions
+            % roll OK | pitch | yaw
+            if DOG(1,1) < 0
+                % throw from negative to positive
+                roll =  -eulerx - 180;  
+                pitch = 180 -(eulerz);
+                yaw = eulery;
+            else
+                roll = eulerx; % xB = xG (OK)
+                pitch = -eulerz;
+                yaw = -eulery;
+            end   
+
+        end
+
+        function [eulerx, eulery, eulerz] = NatRot(quat_array)
+            qx = quat_array(1); qy = quat_array(2); 
+            qz = quat_array(3); qw = quat_array(4);
+            % From NatNet SDK 4.1.1 > Samples > MATLAB
+            q = quaternion( qx, qy, qz, qw );
+            qRot = quaternion( 0, 0, 0, 1);
+            q = mtimes( q, qRot);
+            a = EulerAngles( q , 'zyx' );
+            % change to degrees
+            eulerx = a( 1 ) * -180.0 / pi;
+            eulery = a( 2 ) * 180.0 / pi;
+            eulerz = a( 3 ) * -180.0 / pi;
+
+        end
+
 
         function vec_S2 = changeFrame(vec_S1, DCM)
             % INPUTS: pos_S1 [1x3]; DCM = 3x3
